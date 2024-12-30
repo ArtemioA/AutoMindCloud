@@ -1,0 +1,15 @@
+CHANGELOG.txt
+LICENSE
+MANIFEST.in
+README.md
+get-pip.py
+myfirstscript.py
+requirements.txt
+setup.cfg
+setup.py
+AutoMindCloud/__init__.py
+AutoMindCloud/latemix.py
+AutoMindCloud.egg-info/PKG-INFO
+AutoMindCloud.egg-info/SOURCES.txt
+AutoMindCloud.egg-info/dependency_links.txt
+AutoMindCloud.egg-info/top_level.txt
