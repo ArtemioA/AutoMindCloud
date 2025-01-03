@@ -3,21 +3,24 @@ import sympy
 
 import IPython
 
+from AutoMindCloud.latemix import *
+
+global DatosList,Documento,Orden,Color
+
 DatosList = []
 
 Documento = []
 
 Orden = 0
 
-Color = None
+Color = "black"
 
 #https://widdowquinn.github.io/coding/update-pypi-package/
 
 #_print_Symbol
 
-from AutoMindCloud.latemix import *
-
 def Inicializar(n,color):
+
   global DatosList,Documento,Orden,Color
   
   DatosList = []
@@ -53,7 +56,7 @@ def Redondear(expr):#Redondeamos la expresión.
   return Aproximacion
 
 def D(elemento):#Por default se imprime en rojo, para indicar que es un derivado.
-  global Documento,Color
+  global DatosList,Documento,Orden,Color
 
   print("")
   Tipo = None
@@ -96,7 +99,7 @@ def D(elemento):#Por default se imprime en rojo, para indicar que es un derivado
     Documento.append(texto)
 
 def S(c_componente):#Guardar
-  global DatosList,Color
+  global DatosList,Documento,Orden,Color
   dentro = False
   for element in DatosList:
 
@@ -121,16 +124,21 @@ def S(c_componente):#Guardar
     D(c_componente)#Hacemos un print renderizado en color gris para indicar que el elemento ha sido definido/guardado
 
 def R(string):
-  global Documento,Color
+  global DatosList,Documento,Orden,Color
   IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+string+"}$"))
 
+
 def E(expr):
-  global Documento,Color
+  
   print("")
+
+  global DatosList,Documento,Orden,Color
+
   if isinstance(expr,sympy.core.relational.Equality):#Si tenemos una igualdad
     izquierda = expr.args[0]
     derecha = expr.args[1]
     texto = latemix(izquierda) + " = " + latemix(derecha)
+
     return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
   elif isinstance(expr,list):#Si tenemos un componente
     texto = sympy.latex(expr[0]) + " = " + latemix(expr[1])
