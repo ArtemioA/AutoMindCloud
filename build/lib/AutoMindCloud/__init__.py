@@ -4,18 +4,31 @@ import sympy
 import IPython
 
 DatosList = []
+
 Documento = []
+
+Orden = 0
+
+Color = None
+
 #https://widdowquinn.github.io/coding/update-pypi-package/
 
 #_print_Symbol
 
-def Inicializar(n):
-  global DatosList,Orden,Estilo
+from AutoMindCloud.latemix import *
+
+def Inicializar(n,color):
+  global DatosList,Documento,Orden,Color
   
   DatosList = []
-  Orden = n
+
   Documento = []
-  return DatosList,Orden
+
+  Orden = n
+
+  Color = color
+  
+  return DatosList
   
 def search(symbolo):
   for c_element in DatosList:
@@ -39,8 +52,8 @@ def Redondear(expr):#Redondeamos la expresión.
     Aproximacion = expr
   return Aproximacion
 
-def D(elemento,color = "black"):#Por default se imprime en rojo, para indicar que es un derivado.
-  global Documento
+def D(elemento):#Por default se imprime en rojo, para indicar que es un derivado.
+  global Documento,Color
 
   print("")
   Tipo = None
@@ -61,7 +74,7 @@ def D(elemento,color = "black"):#Por default se imprime en rojo, para indicar qu
     texto = a + b + c
     #texto = texto.replace("text", Estilo)
 
-    IPython.display.display(IPython.display.Latex("$\\textcolor{"+color+"}{"+texto+"}$"))
+    IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
     Documento.append(texto)
 
   if Tipo == "Componente":#Si hemos identificado el elemento ingresado como un componente, entonces lo imprimimos en rojo
@@ -79,45 +92,11 @@ def D(elemento,color = "black"):#Por default se imprime en rojo, para indicar qu
     
     texto = a + b + c
       #texto = texto.replace("text", Estilo)
-    IPython.display.display(IPython.display.Latex("$\\textcolor{"+color+"}{"+texto+"}$"))
+    IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
     Documento.append(texto)
 
-#def E(expr,color = "red"):
-#  DataRealSymbolList = []#Guarda en formato symbolo todos los Datos
-#  for element in DatosList:
-#    if (element[1] != None) :
-#      word = "" #if isinstance(element[1],sy.Float) or isinstance(element[1],float) or isinstance(element[1],int) or isinstance(element[1],sy.core.numbers.Integer):
-#      for letra in sympy.latex(Redondear(element[1])):
-#        if letra == " ":
-#          word = word+"~"
-#        else:
-#          word = word+letra
-#      DataRealSymbolList.append([element[0],sympy.symbols("("+word+")")])
-#    else:
-#      #Es decir, si es un simbolo sin valor (None) o coleccion de simbolos. Entonces:
-#      DataRealSymbolList.append([element[0],element[0]])
-#  #display(DataRealSymbolList)
-
-#  if isinstance(expr,sympy.core.relational.Equality):
-#    texto = sympy.latex(expr)
-#    for element in DataRealSymbolList:
-#      texto = texto.replace(sympy.latex(element[0]), sympy.latex(element[1]))
-
-#    #D(expr.subs(DataRealSymbolList))
-#    IPython.display.display(IPython.display.Latex("\\textcolor{"+color+"}{"+texto+"}"))
-  
-#  if isinstance(expr,list):
-#    texto = sympy.latex(expr[1])
-#    for element in DataRealSymbolList:
-#      texto = texto.replace(sympy.latex(element[0]), sympy.latex(element[1]))
-
-#    texto = sympy.latex(expr[0]) +" = "+texto
-#    #D([expr[0],expr[1].subs(DataRealSymbolList)])
-#    IPython.display.display(IPython.display.Latex("\\textcolor{"+color+"}{"+texto+"}"))
-#    #D([expr[0],sy.N(expr[1].subs(DatosList))])
-
 def S(c_componente):#Guardar
-  global DatosList
+  global DatosList,Color
   dentro = False
   for element in DatosList:
 
@@ -137,41 +116,27 @@ def S(c_componente):#Guardar
 
   #Renderizado Gris
   if c_componente[1] == None or dentro == False:
-    D(c_componente,"black")#Hacemos un print renderizado en color gris para indicar que el elemento ha sido definido/guardado
+    D(c_componente)#Hacemos un print renderizado en color gris para indicar que el elemento ha sido definido/guardado
   else:
-    D(c_componente,"black")#Hacemos un print renderizado en color gris para indicar que el elemento ha sido definido/guardado
-
-#def A(c_componente):#Actualizar
-#  color = "red"
-#  for element in DatosList:
-#    if element[0] == c_componente[0]:
-#      #Identificamos el componente en la lista de datos guardados
-#      #Ahora actualizamos los valores
-#      D(c_componente)
-#      E([c_componente[0],c_componente[1]],color)
-#      D([c_componente[0],c_componente[1].subs(DatosList)],color)
-#      #D([c_componente[0],E(c_componente[1])],color)
-#      #D([c_componente[0],element[1].subs(DatosList)],color)
-#      element[1] = element[1].subs(DatosList)
-#      return element#Sistema por Artemio Araya :)
+    D(c_componente)#Hacemos un print renderizado en color gris para indicar que el elemento ha sido definido/guardado
 
 def R(string):
-  display(IPython.display.Latex(string))  
+  global Documento,Color
+  IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+string+"}$"))
 
-from AutoMindCloud.latemix import *
-
-def E(expr,color ="black"):
+def E(expr):
+  global Documento,Color
   print("")
   if isinstance(expr,sympy.core.relational.Equality):#Si tenemos una igualdad
     izquierda = expr.args[0]
     derecha = expr.args[1]
     texto = latemix(izquierda) + " = " + latemix(derecha)
-    return IPython.display.display(IPython.display.Latex(texto))
+    return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
   elif isinstance(expr,list):#Si tenemos un componente
     texto = sympy.latex(expr[0]) + " = " + latemix(expr[1])
-    return IPython.display.display(IPython.display.Latex(texto))
+    return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
   elif isinstance(expr,sympy.core.mul.Mul):
     texto = latemix(expr)
-    return IPython.display.display(IPython.display.Latex(texto))
+    return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
 
 
