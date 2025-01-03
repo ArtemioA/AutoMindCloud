@@ -61,7 +61,7 @@ def D(elemento,color = "black"):#Por default se imprime en rojo, para indicar qu
     texto = a + b + c
     #texto = texto.replace("text", Estilo)
 
-    IPython.display.display(IPython.display.Latex("\\textcolor{"+color+"}{"+texto+"}"))
+    IPython.display.display(IPython.display.Latex("$\\textcolor{"+color+"}{"+texto+"}$"))
     Documento.append(texto)
 
   if Tipo == "Componente":#Si hemos identificado el elemento ingresado como un componente, entonces lo imprimimos en rojo
@@ -79,7 +79,7 @@ def D(elemento,color = "black"):#Por default se imprime en rojo, para indicar qu
     
     texto = a + b + c
       #texto = texto.replace("text", Estilo)
-    IPython.display.display(IPython.display.Latex("\\textcolor{"+color+"}{"+texto+"}"))
+    IPython.display.display(IPython.display.Latex("$\\textcolor{"+color+"}{"+texto+"}$"))
     Documento.append(texto)
 
 #def E(expr,color = "red"):
@@ -123,7 +123,7 @@ def S(c_componente):#Guardar
 
     #Si es un elemento None, entonces guardamos de forma especial:
     if element[1] == None:
-      element[1] = element[0] 
+      element[1] = element[0]
 
     if element[0] == c_componente[0]:
       element[1] = c_componente[1]
@@ -158,7 +158,7 @@ def S(c_componente):#Guardar
 def R(string):
   display(IPython.display.Latex(string))  
 
-from AutoMindCloud.latemix import *
+from AutoMindCloud.AutoMindCloud.latemix import *
 
 def E(expr,color ="black"):
   print("")
