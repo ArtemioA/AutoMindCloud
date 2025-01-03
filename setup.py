@@ -21,7 +21,7 @@ def get_version(rel_path: str) -> str:
             return line.split(delim)[1]
     raise RuntimeError("Unable to find version string.")
 
-version = "3.2"#python setup.py sdist bdist_wheel"#get_version("Artemix/__about__.py")
+version = "3.3"#python setup.py sdist bdist_wheel"#get_version("Artemix/__about__.py")
 
 with io.open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
