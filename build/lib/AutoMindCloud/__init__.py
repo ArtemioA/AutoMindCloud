@@ -158,7 +158,7 @@ def S(c_componente):#Guardar
 def R(string):
   display(IPython.display.Latex(string))  
 
-from AutoMindClouda.latemix import *
+from AutoMindCloud.latemix import *
 
 def E(expr,color ="black"):
   print("")
