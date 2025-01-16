@@ -153,7 +153,7 @@ def E(expr):
   #display(Orden)
   #display(Color)
 
-  IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+"400"+"}$"))
+  #IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+"400"+"}$"))
 
   if isinstance(expr,sympy.core.relational.Equality):#Si tenemos una igualdad
     izquierda = expr.args[0]
