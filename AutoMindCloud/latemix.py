@@ -30,15 +30,22 @@ from sympy.utilities.iterables import has_variety
 
 import re
 
-from AutoMindCloud.__init__ import *
+from AutoMindCloud.__init__ import search
 
-#from ArtemioADaySolvers.__init__ import search,R,E,D,S,DatosList
+#from AutoMindCloud.__init__ import DatosList
+
+#from AutoMindCloud.__init__ import Color
+
+#from AutoMindCloud.__init__ import DatosList,Orden,Color
 
 import IPython
 
 from IPython.display import Image
 
 display(Image(url='https://i.gyazo.com/5d4120be41b4cc570344957111f844de.png'))
+
+# Use the imported variable
+#print(f"The color is: {Color}")
 
 #display(IPython.display.Image(url'https://i.gyazo.com/d3db1cdb2557fcc4fdb59ebae805092b.png'))
 
@@ -1611,7 +1618,7 @@ class LatexPrinter(Printer):
             return self._settings['symbol_names'][expr]
 
         
-        return self._deal_with_super_sub(search(expr), style=style)#expr.name
+        return self._deal_with_super_sub(search(expr,DatosList), style=style)#expr.name
 
     _print_RandomSymbol = _print_Symbol
 
@@ -3106,7 +3113,17 @@ def latex(expr, **settings):
     return LatexPrinter(settings).doprint(expr)
 
 
-def latemix(expr, **settings):
+def latemix(info, **settings):
+
+    if len(info) == 2: 
+        global DatosList
+
+        expr = info[0]
+
+        DatosList = info[1]
+
+    if len(info) == 1:
+        expr = info
     """Prints LaTeX representation of the given expression. Takes the same
     settings as ``latex()``."""
 

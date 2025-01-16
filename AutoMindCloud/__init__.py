@@ -1,39 +1,54 @@
 from re import I
+
 import sympy
 
 import IPython
 
-from AutoMindCloud.latemix import *
+#global DatosList,Documento,Orden,Color
 
-global DatosList,Documento,Orden,Color
+#DatosList = []
 
-DatosList = []
+#Documento = []
 
-Documento = []
+#Orden = 0
 
-Orden = 0
+#global Color
 
-Color = "black"
+#Color = "black"
 
 #https://widdowquinn.github.io/coding/update-pypi-package/
 
 #_print_Symbol
 
+from AutoMindCloud.latemix import *
+
+global DatosList,Orden,Color
+
+DatosList = []
+
+Orden = 0
+
+Color = ""
+
 def Inicializar(n,color):
 
-  global DatosList,Documento,Orden,Color
+  global DatosList,Orden,Color#Documento
   
   DatosList = []
-
-  Documento = []
 
   Orden = n
 
   Color = color
-  
+
   return DatosList
   
-def search(symbolo):
+def search(symbolo,DatosList):
+
+  #display(DatosList)
+
+  #global DatosList,Orden,Color#Documento
+  #global DatosList
+  
   for c_element in DatosList:
     if c_element[0] == symbolo:
       if isinstance(c_element[1],float):#Si tenemos un numero
@@ -55,51 +70,8 @@ def Redondear(expr):#Redondeamos la expresión.
     Aproximacion = expr
   return Aproximacion
 
-def D(elemento):#Por default se imprime en rojo, para indicar que es un derivado.
-  global DatosList,Documento,Orden,Color
-
-  print("")
-  Tipo = None
-  if isinstance(elemento,sympy.core.relational.Equality):#Si el elemento ingresado es una ecuación, entonces la identificamos
-    Tipo = "Ecuacion"
-  elif isinstance(elemento,list):#Si el elemento ingresado es un componente, entonces lo identificamos.
-    Tipo = "Componente"
-    c_componente = elemento
-  
-  if Tipo == "Ecuacion":#Si hemos identificado el elemento ingresado como una ecuación, entonces la imprimimos en rojo
-
-    a = sympy.latex(elemento.args[0])
-
-    b = "="
-
-    c = sympy.latex(elemento.args[1])
-
-    texto = a + b + c
-    #texto = texto.replace("text", Estilo)
-
-    IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
-    Documento.append(texto)
-
-  if Tipo == "Componente":#Si hemos identificado el elemento ingresado como un componente, entonces lo imprimimos en rojo
-
-
-    #if not isinstance(c_componente[0],str):#isinstance(c_componente[0],sy.core.symbol.Symbol) or isinstance(c_componente[0],sy.core.symbol.Symbol) :
-    a = sympy.latex(c_componente[0])
-
-    b = " = "
-
-    if c_componente[1] == c_componente[0]:#== None:<---------------------------------------------------------------------------------------------------------------------------
-      c = "?"
-    else:
-      c = sympy.latex(Redondear(c_componente[1]))
-    
-    texto = a + b + c
-      #texto = texto.replace("text", Estilo)
-    IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
-    Documento.append(texto)
-
 def S(c_componente):#Guardar
-  global DatosList,Documento,Orden,Color
+  global DatosList,Orden,Color#Documento
   dentro = False
   for element in DatosList:
 
@@ -123,28 +95,78 @@ def S(c_componente):#Guardar
   else:
     D(c_componente)#Hacemos un print renderizado en color gris para indicar que el elemento ha sido definido/guardado
 
-def R(string):
-  global DatosList,Documento,Orden,Color
-  IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+string+"}$"))
+def D(elemento):#Por default se imprime en rojo, para indicar que es un derivado.
+  #global DatosList,Orden,Color#Documento
 
+  print("")
+  Tipo = None
+  if isinstance(elemento,sympy.core.relational.Equality):#Si el elemento ingresado es una ecuación, entonces la identificamos
+    Tipo = "Ecuacion"
+  elif isinstance(elemento,list):#Si el elemento ingresado es un componente, entonces lo identificamos.
+    Tipo = "Componente"
+    c_componente = elemento
+  
+  if Tipo == "Ecuacion":#Si hemos identificado el elemento ingresado como una ecuación, entonces la imprimimos en rojo
+
+    a = sympy.latex(elemento.args[0])
+
+    b = "="
+
+    c = sympy.latex(elemento.args[1])
+
+    texto = a + b + c
+    #texto = texto.replace("text", Estilo)
+
+    IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
+    #Documento.append(texto)
+
+  if Tipo == "Componente":#Si hemos identificado el elemento ingresado como un componente, entonces lo imprimimos en rojo
+
+
+    #if not isinstance(c_componente[0],str):#isinstance(c_componente[0],sy.core.symbol.Symbol) or isinstance(c_componente[0],sy.core.symbol.Symbol) :
+    a = sympy.latex(c_componente[0])
+
+    b = " = "
+
+    if c_componente[1] == c_componente[0]:#== None:<---------------------------------------------------------------------------------------------------------------------------
+      c = "?"
+    else:
+      c = sympy.latex(Redondear(c_componente[1]))
+    
+    texto = a + b + c
+      #texto = texto.replace("text", Estilo)
+    IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
+    #Documento.append(texto)
+
+
+def R(string):
+  #global DatosList,Orden,Color#Documento
+  IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+string+"}$"))
 
 def E(expr):
   
   print("")
 
-  global DatosList,Documento,Orden,Color
+  global DatosList,Orden,Color#Documento
+  
+  #display(DatosList)
+  #display(Orden)
+  #display(Color)
+
+  IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+"400"+"}$"))
 
   if isinstance(expr,sympy.core.relational.Equality):#Si tenemos una igualdad
     izquierda = expr.args[0]
     derecha = expr.args[1]
-    texto = latemix(izquierda) + " = " + latemix(derecha)
+    #texto = latemix(izquierda) + " = " + latemix(derecha)
+    texto = latemix([izquierda,DatosList]) + " = " + latemix([derecha,DatosList])
 
     return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
   elif isinstance(expr,list):#Si tenemos un componente
-    texto = sympy.latex(expr[0]) + " = " + latemix(expr[1])
+    texto = sympy.latex(expr[0]) + " = " + latemix([expr[1],DatosList])
     return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
   elif isinstance(expr,sympy.core.mul.Mul):
-    texto = latemix(expr)
+    texto = latemix([expr,DatosList])#latemix(expr)
     return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
 
 
