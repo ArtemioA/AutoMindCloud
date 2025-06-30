@@ -2,4 +2,3 @@ sympy
 gdown
 cascadio[full]
 trimesh
-base64
