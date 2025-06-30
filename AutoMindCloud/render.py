@@ -1,24 +1,25 @@
+import sympy
 import gdown
 import cascadio
 import trimesh
 import base64
 
-def Render(Step_Link):
-    file_id = Step_Link
+def Render(Drive_Link, Output_Name):
+    file_id = Drive_Link
     url = f"https://drive.google.com/uc?id={file_id}"
-    output = "Sketch.step"
-    gdown.download(url, output, quiet=True)
+    output = Output_Name+".step"
+    #gdown.download(url, output, quiet=True)
 
     # Convert STEP to GLB
-    cascadio.step_to_glb("Sketch.step", "Sketch.glb")
+    cascadio.step_to_glb(Output_Name+".step", Output_Name+".glb")
 
     # Load and scale the mesh
-    mesh = trimesh.load("Sketch.glb")
+    mesh = trimesh.load(Output_Name+".glb")
     TARGET_SIZE = 2  # Set your desired mesh size
     current_size = max(mesh.extents)
     scale_factor = TARGET_SIZE / current_size
     mesh.apply_scale(scale_factor)
-    mesh.export("Sketch_scaled.glb")
+    mesh.export(Output_Name+".glb")
 
     # Properly encode the final GLB as base64
     with open("Sketch_scaled.glb", "rb") as glb_file:
