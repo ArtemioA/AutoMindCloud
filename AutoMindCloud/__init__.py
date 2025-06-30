@@ -21,7 +21,7 @@ import IPython
 #_print_Symbol
 
 from AutoMindCloud.latemix import *
-from AutoMindCloud.Render import *
+from AutoMindCloud.render import *
 
 global DatosList,Orden,Color
 
