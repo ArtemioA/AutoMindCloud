@@ -20,6 +20,9 @@ import IPython
 
 #_print_Symbol
 
+import time
+
+time.sleep(10)
 
 from AutoMindCloud.latemix import *
 from AutoMindCloud.StepRenderScript import *
