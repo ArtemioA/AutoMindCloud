@@ -3166,7 +3166,7 @@ def latex(expr, **settings):
     return LatexPrinter(settings).doprint(expr)
 
 
-def latemix(info, **settings):
+def RenderLatex(info, **settings):
 
     if len(info) == 2: 
         global DatosList
