@@ -24,7 +24,7 @@ def Render(Drive_Link, Output_Name):
     mesh.export(output_glb)
 
     # Properly encode the final GLB as base64
-    with open("output_glb_scaled, "rb") as glb_file:
+    with open(output_glb_scaled, "rb") as glb_file:
         glb_bytes = glb_file.read()
         glb_base64 = base64.b64encode(glb_bytes).decode("utf-8")
 
