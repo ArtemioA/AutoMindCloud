@@ -1,6 +1,7 @@
 """
 A Printer which converts an expression into its LaTeX equivalent.
 """
+import sympy
 
 from typing import Any, Dict as tDict
 
