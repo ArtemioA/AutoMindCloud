@@ -122,12 +122,15 @@ def Render(Drive_Link, Output_Name):
 
     from IPython.display import HTML
 
-    # After writing your HTML file, read its contents
-    with open("Sketch_3D_Viewer.html", "r") as f:
-        html = f.read()
+    html_name = Output_Name + "_scaled" + ".html"
 
-    # Display the HTML in the output cell
-    display(HTML(html))
+    # Save HTML file (write mode)
+    with open(html_name, "w") as f:
+        f.write(html_content)  # Make sure you're writing the actual HTML content here
+
+    # If you really need to read it back (though this is usually unnecessary)
+    with open(html_name, "r") as f:
+        html = f.read()
 
     return html
 
