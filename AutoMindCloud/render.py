@@ -7,7 +7,7 @@ from IPython.display import display,HTML
 
 __all__ = ['Render']
 
-def Render(Drive_Link, Output_Name):
+def StepRender(Drive_Link, Output_Name):
         # function body
     pass
     file_id = Drive_Link
