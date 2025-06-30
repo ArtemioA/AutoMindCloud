@@ -20,7 +20,10 @@ import re
 import IPython
 from IPython.display import Image
 
-global DatosList,Orden,Color
+#global DatosList,Orden,Color
+
+import sympy
+import IPython
 
 DatosList = []
 Orden = 0
@@ -36,12 +39,10 @@ def Inicializar(n, color):
 def search(symbolo, DatosList):
     for c_element in DatosList:
         if c_element[0] == symbolo:
-            if isinstance(c_element[1], float):
-                return "(" + str(c_element[1]) + ")"
-            elif isinstance(c_element[1], int):
-                return "(" + str(c_element[1]) + ")"
+            if isinstance(c_element[1], float) or isinstance(c_element[1], int):
+                return f"({c_element[1]})"
             elif c_element[1] is not None:
-                return "(" + sympy.latex(c_element[1]) + ")"
+                return f"({sympy.latex(c_element[1])})"
             else:
                 return sympy.latex(symbolo)
     return sympy.latex(symbolo)
@@ -56,11 +57,9 @@ def Redondear(expr):
     return Aproximacion
 
 def S(c_componente):
-    global DatosList, Orden, Color
+    global DatosList
     dentro = False
     for element in DatosList:
-        if element[1] is None:
-            element[1] = element[0]
         if element[0] == c_componente[0]:
             element[1] = c_componente[1]
             dentro = True
@@ -69,33 +68,17 @@ def S(c_componente):
     D(c_componente)
 
 def D(elemento):
-    print("")
-    Tipo = None
-    if isinstance(elemento, sympy.core.relational.Equality):
-        Tipo = "Ecuacion"
-    elif isinstance(elemento, list):
-        Tipo = "Componente"
-        c_componente = elemento
-
-    if Tipo == "Ecuacion":
-        a = sympy.latex(elemento.args[0])
-        b = "="
-        c = sympy.latex(elemento.args[1])
-        texto = a + b + c
-        IPython.display.display(IPython.display.Latex("$\\textcolor{" + Color + "}{" + texto + "}$"))
-
-    if Tipo == "Componente":
-        a = sympy.latex(c_componente[0])
+    global Color
+    if isinstance(elemento, list):
+        a = sympy.latex(elemento[0])
         b = " = "
-        if c_componente[1] == c_componente[0]:
-            c = "?"
-        else:
-            c = sympy.latex(Redondear(c_componente[1]))
+        c = "?" if elemento[1] == elemento[0] else sympy.latex(Redondear(elemento[1]))
         texto = a + b + c
-        IPython.display.display(IPython.display.Latex("$\\textcolor{" + Color + "}{" + texto + "}$"))
+        IPython.display.display(IPython.display.Latex(f"$\\textcolor{{{Color}}}{{{texto}}}$"))
 
 def R(string):
-    IPython.display.display(IPython.display.Latex("$\\textcolor{" + Color + "}{" + string + "}$"))
+    global Color
+    IPython.display.display(IPython.display.Latex(f"$\\textcolor{{{Color}}}{{{string}}}$"))
     
 # Use the imported variable
 #print(f"The color is: {Color}")
