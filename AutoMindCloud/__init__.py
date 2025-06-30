@@ -1,3 +1,5 @@
+import sympy as sy
+
 from re import I
 
 import IPython
