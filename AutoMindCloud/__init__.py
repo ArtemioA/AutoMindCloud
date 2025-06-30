@@ -20,8 +20,7 @@ import IPython
 
 #_print_Symbol
 
-from AutoMindCloud.render import *
-display(Render())
+from AutoMindCloud.StepRenderScript import *
 from AutoMindCloud.latemix import *
 
 #from AutoMindCloud.render import *
