@@ -23,8 +23,12 @@ def Render(Drive_Link, Output_Name):
     scale_factor = TARGET_SIZE / current_size
     mesh.apply_scale(scale_factor)
     mesh.export(output_glb_scaled)
-    from google.colab import files
-    files.download(output_glb_scaled)
+    def download_file(filepath):
+    try:
+        import google.colab
+        from google.colab import files
+        files.download(filepath)
+    except ImportError:
     
     # Properly encode the final GLB as base64
     with open(output_glb_scaled, "rb") as glb_file:
