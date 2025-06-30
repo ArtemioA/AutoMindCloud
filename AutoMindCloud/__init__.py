@@ -20,8 +20,9 @@ import IPython
 
 #_print_Symbol
 
-from .render import *
-from .latemix import *
+from AutoMindCloud.render import *
+display(Render())
+from AutoMindCloud.latemix import *
 
 #from AutoMindCloud.render import *
 #from AutoMindCloud.latemix import *
