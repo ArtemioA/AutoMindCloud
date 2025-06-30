@@ -55,7 +55,7 @@ def Inicializar(n,color):
 
   Color = color
 
-  pass
+  #pass
   return DatosList
   
 def search(symbolo,DatosList):
