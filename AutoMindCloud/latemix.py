@@ -31,7 +31,7 @@ from sympy.utilities.iterables import has_variety
 
 import re
 
-from AutoMindCloud.__init__ import search
+#from AutoMindCloud.__init__ import search
 
 import IPython
 
