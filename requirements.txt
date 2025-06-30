@@ -1,4 +1,4 @@
 sympy
 gdown
-cascadio[full]
+cascadio
 trimesh
