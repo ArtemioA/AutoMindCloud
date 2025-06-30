@@ -120,15 +120,16 @@ def Render(Drive_Link, Output_Name):
     </html>
     """
 
+    html_name = Output_Name+"_scaled"+".html"
     # Save HTML file (write mode)
-    with open(html_filename, "w") as f:
-        f.write(html_content)
+    with open(html_name, "w") as f:
+        f.write(html_name)
 
     # Now you can open it for reading if you need to
-    with open(html_filename, "r") as f:
+    with open(html_name, "r") as f:
         html = f.read()
 
-    return html_filename
+    return html_name
 
 
 #with open("Sketch_3D_Viewer.html", "r") as f:
