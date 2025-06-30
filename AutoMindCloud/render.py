@@ -21,7 +21,7 @@ def Render(Drive_Link, Output_Name):
     current_size = max(mesh.extents)
     scale_factor = TARGET_SIZE / current_size
     mesh.apply_scale(scale_factor)
-    mesh.export(output_glb)
+    mesh.export(output_glb_scaled)
     
     # Properly encode the final GLB as base64
     with open(output_glb_scaled, "rb") as glb_file:
