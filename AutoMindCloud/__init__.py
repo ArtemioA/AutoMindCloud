@@ -1,7 +1,5 @@
 from re import I
 
-import sympy
-
 import IPython
 
 #global DatosList,Documento,Orden,Color
@@ -20,8 +18,9 @@ import IPython
 
 #_print_Symbol
 
-from AutoMindCloud.latemix import *
 from AutoMindCloud.render import *
+from AutoMindCloud.latemix import *
+
 
 global DatosList,Orden,Color
 
@@ -32,7 +31,6 @@ Orden = 0
 Color = ""
 
 def Inicializar(n,color):
-  import sympy
   
   global DatosList,Orden,Color#Documento
   
