@@ -131,8 +131,8 @@ def Render(Drive_Link, Output_Name):
     # If you really need to read it back (though this is usually unnecessary)
     with open(html_name, "r") as f:
         html = f.read()
-
-    return html
+    
+    return display(HTML(Html))
 
 
 #with open("Sketch_3D_Viewer.html", "r") as f:
