@@ -125,7 +125,7 @@ def Render(Drive_Link, Output_Name):
         f.write(html_content)
 
     # Now you can open it for reading if you need to
-        with open(html_filename, "r") as f:
+    with open(html_filename, "r") as f:
         html = f.read()
 
     return html_filename
