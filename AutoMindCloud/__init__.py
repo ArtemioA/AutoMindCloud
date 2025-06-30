@@ -1,27 +1,6 @@
 
-
-from re import I
-
-import IPython
-
-#global DatosList,Documento,Orden,Color
-
-#DatosList = []
-
-#Documento = []
-
-#Orden = 0
-
-#global Color
-
-#Color = "black"
-
-#https://widdowquinn.github.io/coding/update-pypi-package/
-
-#_print_Symbol
-
-from AutoMindCloud.latemix import *
-from AutoMindCloud.StepRenderScript import *
+import IPython import Image
+display(Image(url='https://i.gyazo.com/5d4120be41b4cc570344957111f844de.png'))
 
 
 
