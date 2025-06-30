@@ -20,8 +20,11 @@ import IPython
 
 #_print_Symbol
 
-from AutoMindCloud.render import *
-from AutoMindCloud.latemix import *
+from .render import *
+from .latemix import *
+
+#from AutoMindCloud.render import *
+#from AutoMindCloud.latemix import *
 
 
 global DatosList,Orden,Color
