@@ -126,7 +126,5 @@ def Render(Step_Link):
     with open(html_filename, "w") as f:
         f.write(html_content)
 
-    from IPython.display import HTML
-    HTML(html_filename)
+    return html_filename
 
-__all__ = ['Render']
