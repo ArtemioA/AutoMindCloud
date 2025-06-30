@@ -9,7 +9,7 @@ def Render(Drive_Link, Output_Name):
     url = f"https://drive.google.com/uc?id={file_id}"
     output_Step = Output_Name+".step"
     output_glb = output = Output_Name+".glb"
-    output_glb_scaled = output = Output_Name+"_Scaled"+".step"
+    output_glb_scaled = Output_Name+"_scaled"+".step"
     gdown.download(url, output_Step, quiet=True)
 
     # Convert STEP to GLB
@@ -22,7 +22,7 @@ def Render(Drive_Link, Output_Name):
     scale_factor = TARGET_SIZE / current_size
     mesh.apply_scale(scale_factor)
     mesh.export(output_glb)
-
+    
     # Properly encode the final GLB as base64
     with open(output_glb_scaled, "rb") as glb_file:
         glb_bytes = glb_file.read()
