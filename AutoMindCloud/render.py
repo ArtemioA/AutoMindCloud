@@ -3,7 +3,12 @@ import cascadio
 import trimesh
 import base64
 
-def Render(Step):
+def Render(Step_Link):
+
+    file_id = Step_Link
+    url = f"https://drive.google.com/uc?id={file_id}"
+    output = "Sketch.step"
+    gdown.download(url, output, quiet=True)
 
     # Convert hdmi.step to hdmi.glb
     glb_base64 = cascadio.step_to_glb("Sketch.step", "Sketch.glb")
