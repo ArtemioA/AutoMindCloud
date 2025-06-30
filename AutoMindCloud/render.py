@@ -9,7 +9,7 @@ def Render(Drive_Link, Output_Name):
     url = f"https://drive.google.com/uc?id={file_id}"
     output_Step = Output_Name+".step"
     output_glb = output = Output_Name+".glb"
-    output_glb_scaled = Output_Name+"_scaled"+".step"
+    output_glb_scaled = Output_Name+"_scaled"+".glb"
     gdown.download(url, output_Step, quiet=True)
 
     # Convert STEP to GLB
