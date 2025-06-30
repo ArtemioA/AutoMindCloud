@@ -20,9 +20,7 @@ import IPython
 
 #_print_Symbol
 
-from AutoMindCloud.latemix import *
-from AutoMindCloud.StepRenderScript import function
-from AutoMindCloud.latemix import latex_escape()
+from AutoMindCloud import *
 
 #from AutoMindCloud.AutoMindCloud.render import *
 #from AutoMindCloud.latemix import *
