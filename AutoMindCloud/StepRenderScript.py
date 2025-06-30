@@ -5,7 +5,7 @@ import trimesh
 import base64
 from IPython.display import display,HTML
 
-__all__ = ['StepRender']
+#__all__ = ['StepRender']
         
 def StepRender(Drive_Link, Output_Name):
         # function body
