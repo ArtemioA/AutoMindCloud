@@ -32,7 +32,8 @@ Orden = 0
 Color = ""
 
 def Inicializar(n,color):
-
+  import sympy
+  
   global DatosList,Orden,Color#Documento
   
   DatosList = []
