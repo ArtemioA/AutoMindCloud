@@ -5,8 +5,6 @@ import trimesh
 import base64
 from IPython.display import display,HTML
 
-from AutoMindCloud.__init__ import *
-
 __all__ = ['StepRender']
 
 def function():
