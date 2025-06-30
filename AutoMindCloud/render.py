@@ -5,6 +5,8 @@ import trimesh
 import base64
 from IPython.display import display,HTML
 
+__all__ = ['Render']
+
 def Render(Drive_Link, Output_Name):
     file_id = Drive_Link
     url = f"https://drive.google.com/uc?id={file_id}"
