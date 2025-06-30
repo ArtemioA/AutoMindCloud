@@ -1,0 +1,4 @@
+sympy
+gdown
+cascadio[full]
+trimesh
