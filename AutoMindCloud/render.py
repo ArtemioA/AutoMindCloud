@@ -3,7 +3,7 @@ import gdown
 import cascadio
 import trimesh
 import base64
-
+from IPython.display import display,HTML
 
 def Render(Drive_Link, Output_Name):
     file_id = Drive_Link
@@ -132,7 +132,7 @@ def Render(Drive_Link, Output_Name):
     with open(html_name, "r") as f:
         html = f.read()
     
-    return display(HTML(Html))
+    display(HTML(Html))
 
 
 #with open("Sketch_3D_Viewer.html", "r") as f:
