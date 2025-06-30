@@ -3,7 +3,7 @@ import gdown
 import cascadio
 import trimesh
 import base64
-from google.colab import files
+
 
 def Render(Drive_Link, Output_Name):
     file_id = Drive_Link
@@ -23,7 +23,7 @@ def Render(Drive_Link, Output_Name):
     scale_factor = TARGET_SIZE / current_size
     mesh.apply_scale(scale_factor)
     mesh.export(output_glb_scaled)
-    
+    from google.colab import files
     files.download(output_glb_scaled)
     
     # Properly encode the final GLB as base64
