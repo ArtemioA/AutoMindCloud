@@ -132,7 +132,7 @@ def Render(Drive_Link, Output_Name):
     with open(html_name, "r") as f:
         html = f.read()
     
-    display(HTML(Html))
+    display(HTML(html))
 
 
 #with open("Sketch_3D_Viewer.html", "r") as f:
