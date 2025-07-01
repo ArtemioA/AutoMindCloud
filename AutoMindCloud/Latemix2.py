@@ -3117,14 +3117,14 @@ __all__ = ["RenderLatex"]
 def RenderLatex(info, **settings):
     display(info)
   
-    if len(info) == 2: 
+    if isinstance(info, list):#len(info) == 2: 
         global DatosList
 
         expr = info[0]
 
         DatosList = info[1]
-
-    if len(info) == 1:
+    else:
+        #if len(info) == 1:
         expr = info
     """Prints LaTeX representation of the given expression. Takes the same
     settings as ``latex()``."""
