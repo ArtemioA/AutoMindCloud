@@ -25,7 +25,7 @@ import IPython
 #from AutoMindCloud.AutoMindCloud.render import *
 
   
-from AutoMindCloud.latemix import *
+from AutoMindCloud.Latemix2 import *
 
 global DatosList,Orden,Color
 
