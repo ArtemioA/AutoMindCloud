@@ -1,7 +1,7 @@
 """
 A Printer which converts an expression into its LaTeX equivalent.
 """
-
+#latemix = RenderLatex
 from typing import Any, Dict as tDict
 
 import itertools
@@ -3113,7 +3113,7 @@ def latex(expr, **settings):
     return LatexPrinter(settings).doprint(expr)
 
 
-def latemix(info, **settings):
+def RenderLatex(info, **settings):
 
     if len(info) == 2: 
         global DatosList
