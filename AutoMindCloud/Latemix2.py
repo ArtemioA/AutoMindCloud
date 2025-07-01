@@ -3115,7 +3115,7 @@ def latex(expr, **settings):
 __all__ = ["RenderLatex"]
 
 def RenderLatex(info, **settings):
-    display(info)
+    #display(info)
   
     if isinstance(info, list):#len(info) == 2: 
         global DatosList
