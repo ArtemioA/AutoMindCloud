@@ -46,7 +46,25 @@ def Inicializar(n,color):
   Color = color
 
   return DatosList
+
+def search(symbolo,DatosList):
+
+  #display(DatosList)
+
+  #global DatosList,Orden,Color#Documento
+  #global DatosList
   
+  for c_element in DatosList:
+    if c_element[0] == symbolo:
+      if isinstance(c_element[1],float):#Si tenemos un numero
+          return "("+str(c_element[1])+")"
+      elif isinstance(c_element[1],int):#Si tenemos un float
+          return "("+str(c_element[1])+")"
+      elif c_element[1] != None:#Si tenemos una expresión
+          return "("+sympy.latex(c_element[1])+")"
+      else:
+        return sympy.latex(symbolo)#Si es None
+  return sympy.latex(symbolo)
 
 
 def Redondear(expr):#Redondeamos la expresión.
@@ -130,25 +148,6 @@ def D(elemento):#Por default se imprime en rojo, para indicar que es un derivado
 def R(string):
   #global DatosList,Orden,Color#Documento
   IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+string+"}$"))
-
-def search(symbolo,DatosList):
-
-  #display(DatosList)
-
-  #global DatosList,Orden,Color#Documento
-  #global DatosList
-  
-  for c_element in DatosList:
-    if c_element[0] == symbolo:
-      if isinstance(c_element[1],float):#Si tenemos un numero
-          return "("+str(c_element[1])+")"
-      elif isinstance(c_element[1],int):#Si tenemos un float
-          return "("+str(c_element[1])+")"
-      elif c_element[1] != None:#Si tenemos una expresión
-          return "("+sympy.latex(c_element[1])+")"
-      else:
-        return sympy.latex(symbolo)#Si es None
-  return sympy.latex(symbolo)
   
 def E(expr):
   
