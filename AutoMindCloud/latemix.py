@@ -44,7 +44,7 @@ from IPython.display import Image
 
 __all__ = ["RenderLatex"]
 
-"display(Image(url='https://i.gyazo.com/5d4120be41b4cc570344957111f844de.png'))
+#display(Image(url='https://i.gyazo.com/5d4120be41b4cc570344957111f844de.png'))
 
 # Use the imported variable
 #print(f"The color is: {Color}")
