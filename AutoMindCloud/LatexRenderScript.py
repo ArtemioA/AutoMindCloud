@@ -23,7 +23,7 @@ import IPython
 #from AutoMindCloud import *
 
 #from AutoMindCloud.AutoMindCloud.render import *
-from AutoMindCloud.latemix import *
+from AutoMindCloud.latemix import RenderLatex
 
 
 global DatosList,Orden,Color
