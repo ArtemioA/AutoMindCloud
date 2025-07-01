@@ -30,7 +30,7 @@ from sympy.utilities.iterables import has_variety
 
 import re
 
-from AutoMindCloud.LatexRenderScript import *#search
+from AutoMindCloud.LatexRenderScript import search
 
 #from AutoMindCloud.__init__ import DatosList
 
