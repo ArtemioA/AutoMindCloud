@@ -23,6 +23,26 @@ import IPython
 #from AutoMindCloud import *
 
 #from AutoMindCloud.AutoMindCloud.render import *
+
+def search(symbolo,DatosList):
+
+  #display(DatosList)
+
+  #global DatosList,Orden,Color#Documento
+  #global DatosList
+  
+  for c_element in DatosList:
+    if c_element[0] == symbolo:
+      if isinstance(c_element[1],float):#Si tenemos un numero
+          return "("+str(c_element[1])+")"
+      elif isinstance(c_element[1],int):#Si tenemos un float
+          return "("+str(c_element[1])+")"
+      elif c_element[1] != None:#Si tenemos una expresión
+          return "("+sympy.latex(c_element[1])+")"
+      else:
+        return sympy.latex(symbolo)#Si es None
+  return sympy.latex(symbolo)
+  
 from AutoMindCloud.latemix import *
 
 
@@ -46,24 +66,7 @@ def Inicializar(n,color):
 
   return DatosList
   
-def search(symbolo,DatosList):
 
-  #display(DatosList)
-
-  #global DatosList,Orden,Color#Documento
-  #global DatosList
-  
-  for c_element in DatosList:
-    if c_element[0] == symbolo:
-      if isinstance(c_element[1],float):#Si tenemos un numero
-          return "("+str(c_element[1])+")"
-      elif isinstance(c_element[1],int):#Si tenemos un float
-          return "("+str(c_element[1])+")"
-      elif c_element[1] != None:#Si tenemos una expresión
-          return "("+sympy.latex(c_element[1])+")"
-      else:
-        return sympy.latex(symbolo)#Si es None
-  return sympy.latex(symbolo)
 
 def Redondear(expr):#Redondeamos la expresión.
   if isinstance(expr, sympy.Expr) or isinstance(expr, sympy.Float):
