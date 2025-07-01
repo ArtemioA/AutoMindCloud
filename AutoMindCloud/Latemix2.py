@@ -30,13 +30,11 @@ from sympy.utilities.iterables import has_variety
 
 import re
 
-from AutoMindCloud.LatexRenderScript import search
-
 #from AutoMindCloud.__init__ import DatosList
 
 #from AutoMindCloud.__init__ import Color
 
-from AutoMindCloud.LatexRenderScript import DatosList,Orden,Color
+#from AutoMindCloud.LatexRenderScript import DatosList,Orden,Color
 
 import IPython
 
@@ -3243,7 +3241,8 @@ def multiline_latex(lhs, rhs, terms_per_line=1, environment="align*", use_dots=F
 __all__ = ["RenderLatex"]
 
 def RenderLatex(info, **settings):
-
+    from AutoMindCloud.LatexRenderScript import search
+  
     if len(info) == 2: 
         global DatosList
 
