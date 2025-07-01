@@ -36,7 +36,7 @@ from AutoMindCloud.LatexRenderScript import search
 
 #from AutoMindCloud.__init__ import Color
 
-"from AutoMindCloud.__init__ import DatosList,Orden,Color
+from AutoMindCloud.LatexRenderScript import DatosList,Orden,Color
 
 import IPython
 
