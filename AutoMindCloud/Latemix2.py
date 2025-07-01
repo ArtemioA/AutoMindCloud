@@ -3114,7 +3114,7 @@ def latex(expr, **settings):
 
 __all__ = ["RenderLatex"]
 
-def latemix(info, **settings):
+def RenderLatex(info, **settings):
     display(info)
   
     if len(info) == 2: 
