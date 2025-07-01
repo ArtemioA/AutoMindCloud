@@ -3114,24 +3114,6 @@ def latex(expr, **settings):
     """
     return LatexPrinter(settings).doprint(expr)
 
-
-def RenderLatex(info, **settings):
-
-    if len(info) == 2: 
-        global DatosList
-
-        expr = info[0]
-
-        DatosList = info[1]
-
-    if len(info) == 1:
-        expr = info
-    """Prints LaTeX representation of the given expression. Takes the same
-    settings as ``latex()``."""
-
-    return latex(expr, **settings)
-
-
 def multiline_latex(lhs, rhs, terms_per_line=1, environment="align*", use_dots=False, **settings):
     r"""
     This function generates a LaTeX equation with a multiline right-hand side
@@ -3259,3 +3241,19 @@ def multiline_latex(lhs, rhs, terms_per_line=1, environment="align*", use_dots=F
         term_count += 1
     result += end_term
     return result
+
+def RenderLatex(info, **settings):
+
+    if len(info) == 2: 
+        global DatosList
+
+        expr = info[0]
+
+        DatosList = info[1]
+
+    if len(info) == 1:
+        expr = info
+    """Prints LaTeX representation of the given expression. Takes the same
+    settings as ``latex()``."""
+
+    return latex(expr, **settings)
