@@ -1,11 +1,30 @@
+import sympy as sy
 
-import re
-
-#from AutoMindCloud.__init__ import search
+from re import I
 
 import IPython
 
-from IPython.display import Image
+#global DatosList,Documento,Orden,Color
+
+#DatosList = []
+
+#Documento = []
+
+#Orden = 0
+
+#global Color
+
+#Color = "black"
+
+#https://widdowquinn.github.io/coding/update-pypi-package/
+
+#_print_Symbol
+
+#from AutoMindCloud import *
+
+#from AutoMindCloud.AutoMindCloud.render import *
+from AutoMindCloud.latemix import *
+
 
 global DatosList,Orden,Color
 
@@ -25,7 +44,6 @@ def Inicializar(n,color):
 
   Color = color
 
-  #pass
   return DatosList
   
 def search(symbolo,DatosList):
@@ -123,3 +141,34 @@ def D(elemento):#Por default se imprime en rojo, para indicar que es un derivado
       #texto = texto.replace("text", Estilo)
     IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
     #Documento.append(texto)
+
+
+def R(string):
+  #global DatosList,Orden,Color#Documento
+  IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+string+"}$"))
+
+def E(expr):
+  
+  print("")
+
+  global DatosList,Orden,Color#Documento
+  
+  #display(DatosList)
+  #display(Orden)
+  #display(Color)
+
+  #IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+"400"+"}$"))
+
+  if isinstance(expr,sympy.core.relational.Equality):#Si tenemos una igualdad
+    izquierda = expr.args[0]
+    derecha = expr.args[1]
+    #texto = RenderLatex(izquierda) + " = " + RenderLatex(derecha)
+    texto = RenderLatex([izquierda,DatosList]) + " = " + RenderLatex([derecha,DatosList])
+
+    return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
+  elif isinstance(expr,list):#Si tenemos un componente
+    texto = sympy.latex(expr[0]) + " = " + RenderLatex([expr[1],DatosList])
+    return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
+  elif isinstance(expr,sympy.core.mul.Mul):
+    texto = RenderLatex([expr,DatosList])#latemix(expr)
+    return IPython.display.display(IPython.display.Latex("$\\textcolor{"+Color+"}{"+texto+"}$"))
