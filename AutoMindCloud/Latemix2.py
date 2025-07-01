@@ -3118,18 +3118,20 @@ def RenderLatex(info, **settings):
     #from AutoMindCloud.LatexRenderScript import search
   
     #if len(info) == 2: 
-    #    global DatosList
+     if isinstance(info, list)
+        global DatosList
 
-    #    expr = info[0]
+        expr = info[0]
 
-    #    DatosList = info[1]
+        DatosList = info[1]
 
     #if len(info) == 1:
-    #    expr = info
+      else:
+        expr = info
     """Prints LaTeX representation of the given expression. Takes the same
     settings as ``latex()``."""
 
-    return latex(info, **settings)
+    return latex(expr, **settings)
   
 def multiline_latex(lhs, rhs, terms_per_line=1, environment="align*", use_dots=False, **settings):
     r"""
