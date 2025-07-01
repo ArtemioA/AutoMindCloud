@@ -1,4 +1,4 @@
-import sympy as sy
+import sympy
 
 from re import I
 
