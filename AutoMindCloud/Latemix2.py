@@ -40,14 +40,8 @@ from AutoMindCloud.LatexRenderScript import *
 
 import IPython
 
-from IPython.display import Image
-
-#display(Image(url='https://i.gyazo.com/5d4120be41b4cc570344957111f844de.png'))
-
 # Use the imported variable
 #print(f"The color is: {Color}")
-
-#display(IPython.display.Image(url'https://i.gyazo.com/d3db1cdb2557fcc4fdb59ebae805092b.png'))
 
 #from artemix.__init__ import DatosList
 
