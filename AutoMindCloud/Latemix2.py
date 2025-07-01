@@ -3118,7 +3118,7 @@ def RenderLatex(info, **settings):
     #from AutoMindCloud.LatexRenderScript import search
   
     #if len(info) == 2: 
-     if isinstance(info, list)
+     if isinstance(info, list):
         global DatosList
 
         expr = info[0]
