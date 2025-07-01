@@ -3114,43 +3114,23 @@ def latex(expr, **settings):
 
 __all__ = ["RenderLatex"]
 
-#def RenderLatex(info, **settings):
-#    #from AutoMindCloud.LatexRenderScript import search
-#  
-#    #if len(info) == 2: 
-#     if isinstance(info, list):
-#        global DatosList
-#
-#        expr = info[0]
-#
-#        DatosList = info[1]
-#
-#        #if len(info) == 1:
-#    else:
-#        expr = info
-#    """Prints LaTeX representation of the given expression. Takes the same
-#    settings as ``latex()``."""
-#
-#    return latex(expr, **settings)
-
 def RenderLatex(info, **settings):
-    """Prints LaTeX representation of the given expression. Takes the same settings as ``latex()``."""
-    # from AutoMindCloud.LatexRenderScript import search
-
+  
+  #from AutoMindCloud.LatexRenderScript import search
+  
+  #if len(info) == 2: 
+  if isinstance(info, list):
     global DatosList
 
-    if isinstance(info, list):
-        if len(info) == 2:
-            expr = info[0]
-            DatosList = info[1]
-        elif len(info) == 1:
-            expr = info[0]
-            DatosList = None
-        else:
-            raise ValueError("info list must have 1 or 2 elements")
-    else:
-        expr = info
-        DatosList = None
+    expr = info[0]
+
+    DatosList = info[1]
+
+  else:
+    
+    expr = info
+    """Prints LaTeX representation of the given expression. Takes the same
+    settings as ``latex()``."""
 
     return latex(expr, **settings)
   
