@@ -3125,8 +3125,8 @@ def RenderLatex(info, **settings):
 
         DatosList = info[1]
 
-    #if len(info) == 1:
-      else:
+        #if len(info) == 1:
+    else:
         expr = info
     """Prints LaTeX representation of the given expression. Takes the same
     settings as ``latex()``."""
