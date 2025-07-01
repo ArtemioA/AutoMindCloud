@@ -30,7 +30,7 @@ from sympy.utilities.iterables import has_variety
 
 import re
 
-from AutoMindCloud.__init__ import search
+from AutoMindCloud.LatexRenderScript import search
 
 #from AutoMindCloud.__init__ import DatosList
 
@@ -41,8 +41,6 @@ from AutoMindCloud.__init__ import search
 import IPython
 
 from IPython.display import Image
-
-__all__ = ["RenderLatex"]
 
 #display(Image(url='https://i.gyazo.com/5d4120be41b4cc570344957111f844de.png'))
 
@@ -3242,6 +3240,8 @@ def multiline_latex(lhs, rhs, terms_per_line=1, environment="align*", use_dots=F
     result += end_term
     return result
 
+__all__ = ["RenderLatex"]
+
 def RenderLatex(info, **settings):
 
     if len(info) == 2: 
@@ -3257,3 +3257,4 @@ def RenderLatex(info, **settings):
     settings as ``latex()``."""
 
     return latex(expr, **settings)
+  
