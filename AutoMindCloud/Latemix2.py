@@ -36,7 +36,7 @@ import re
 
 #from AutoMindCloud.LatexRenderScript import DatosList,Orden,Color
 
-from AutoMindCloud.__init__ import *
+from AutoMindCloud.LatexRenderScript import *
 
 import IPython
 
