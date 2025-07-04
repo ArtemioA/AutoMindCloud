@@ -11,7 +11,7 @@ def Download_Step(Drive_Link,Output_Name):
     output_Step = Output_Name+".step"
     gdown.download(url, output_Step, quiet=True)
 
-def Step_Render(Step_Name):
+def Step_3D_Render(Step_Name):
     # function body
     #pass
     #file_id = Drive_Link
