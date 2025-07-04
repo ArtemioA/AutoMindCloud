@@ -6,22 +6,30 @@ import base64
 from IPython.display import display,HTML
 
 #__all__ = ['StepRender']
-        
-def StepRender(Drive_Link, Output_Name):
-        # function body
-    #pass
-    file_id = Drive_Link
-    url = f"https://drive.google.com/uc?id={file_id}"
+def DownloadStep(Drive_Link,Output_Name):
+    url = f"https://drive.google.com/uc?id={Drive_Link}"
     output_Step = Output_Name+".step"
-    output_glb = output = Output_Name+".glb"
-    output_glb_scaled = Output_Name+"_scaled"+".glb"
     gdown.download(url, output_Step, quiet=True)
+
+def StepRender(Step_Name):
+    # function body
+    #pass
+    #file_id = Drive_Link
+    #url = f"https://drive.google.com/uc?id={file_id}"
+    
+    output_Step = Step_Name+".step"
+    output_glb = Step_Name+".glb"
+    output_glb_scaled = Output_Name+"_scaled"+".glb"
+    #gdown.download(url, output_Step, quiet=True)
 
     # Convert STEP to GLB
     glb_base64 = cascadio.step_to_glb(output_Step, output_glb)
+    display(type(glb_base64))
 
     # Load and scale the mesh
     mesh = trimesh.load(output_glb)
+    display(type(mesh))
+        
     TARGET_SIZE = 2  # Set your desired mesh size
     current_size = max(mesh.extents)
     scale_factor = TARGET_SIZE / current_size
