@@ -19,7 +19,7 @@ def StepRender(Step_Name):
     
     output_Step = Step_Name+".step"
     output_glb = Step_Name+".glb"
-    output_glb_scaled = Output_Name+"_scaled"+".glb"
+    output_glb_scaled = Step_Name+"_scaled"+".glb"
     #gdown.download(url, output_Step, quiet=True)
 
     # Convert STEP to GLB
