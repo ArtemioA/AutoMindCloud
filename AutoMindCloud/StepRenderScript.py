@@ -134,7 +134,7 @@ def StepRender(Step_Name):
 
     from IPython.display import HTML
 
-    html_name = Output_Name + "_scaled" + ".html"
+    html_name = output_Step + "_scaled" + ".html"
 
     # Save HTML file (write mode)
     with open(html_name, "w") as f:
