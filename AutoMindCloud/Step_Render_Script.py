@@ -6,7 +6,7 @@ import base64
 from IPython.display import display,HTML
 
 #__all__ = ['StepRender']
-def DownloadStep(Drive_Link,Output_Name):
+def Download_Step(Drive_Link,Output_Name):
     url = f"https://drive.google.com/uc?id={Drive_Link}"
     output_Step = Output_Name+".step"
     gdown.download(url, output_Step, quiet=True)
