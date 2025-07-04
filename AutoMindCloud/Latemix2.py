@@ -1611,7 +1611,7 @@ class LatexPrinter(Printer):
         if expr in self._settings['symbol_names']:
             return self._settings['symbol_names'][expr]
 
-        from AutoMindCloud.LatexRenderScript import search
+        from AutoMindCloud.Latex_Render_Script import search
         return self._deal_with_super_sub(search(expr,DatosList), style=style)#expr.name
 
     _print_RandomSymbol = _print_Symbol
