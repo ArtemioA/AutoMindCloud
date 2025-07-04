@@ -24,11 +24,9 @@ def Step_3D_Render(Step_Name):
 
     # Convert STEP to GLB
     glb_base64 = cascadio.step_to_glb(output_Step, output_glb)
-    display(type(glb_base64))
 
     # Load and scale the mesh
     mesh = trimesh.load(output_glb)
-    display(type(mesh))
         
     TARGET_SIZE = 2  # Set your desired mesh size
     current_size = max(mesh.extents)
