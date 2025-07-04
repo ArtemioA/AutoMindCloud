@@ -14,15 +14,11 @@ def show_view(result,rotate_axis, rotate_angle, title=""):
     display(SVG(svg_str))
     print(title)
 
-def SketchRender(Sketch_Name):
+def Step_Orthographic_Render(Sketch_Name):
+
+  Sketch_Name = Sketch_Name + str(".step")
   result = cq.importers.importStep(Sketch_Name)
   # Standard views using rotation
   show_view(result,(1,0,0), 0, "Front View")
   show_view(result,(1,0,0), 90, "Top View")
   show_view(result,(0,1,0), 90, "Right Side View")
-
-  # Isometric view (rotate 45° around X then 30° around Z)
-  #rotated = result.rotate((0,0,0), (1,0,0), 45).rotate((0,0,0), (0,0,1), 30)
-  #svg_str = exporters.getSVG(rotated.val())
-  #display(SVG(svg_str))
-  #print("Isometric View")
