@@ -42,8 +42,8 @@ function rewriteUrdfMeshFilenames(urdfText, mapping) {
 
 function defaultOptions(user) {
   return {
-    upAxis: "z",            // "z" or "y"
-    initialDistance: 6.0,
+    upAxis: "z",
+    initialDistance: 8.0,
     castShadows: true,
     background: "#0b0b0b",
     showGrid: true,
@@ -55,6 +55,7 @@ export default async function initViewer(container) {
   if (!container) throw new Error("initViewer(container): container is required.");
   const { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight, PCFSoftShadowMap, Color, sRGBEncoding, ACESFilmicToneMapping, GridHelper, HemisphereLight, Vector3, OrbitControls, STLLoader, URDFLoader } = await loadModules();
 
+  // Scene / renderer
   const scene = new Scene();
   scene.background = new Color("#0b0b0b");
 
@@ -67,14 +68,16 @@ export default async function initViewer(container) {
   renderer.shadowMap.type = PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
+  // Camera / controls
   const camera = new PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 2000);
-  camera.position.set(6, 6, 6);
+  camera.position.set(8, 8, 8);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.target.set(0, 0, 0);
 
+  // Lights
   const hemi = new HemisphereLight(0xffffff, 0x444444, 0.6);
   scene.add(hemi);
   const dir = new DirectionalLight(0xffffff, 1.0);
@@ -85,6 +88,7 @@ export default async function initViewer(container) {
   const amb = new AmbientLight(0xffffff, 0.2);
   scene.add(amb);
 
+  // Grid
   const grid = new GridHelper(10, 20, 0x444444, 0x222222);
   grid.visible = true;
   scene.add(grid);
@@ -109,34 +113,41 @@ export default async function initViewer(container) {
     if (!payload || typeof payload !== "object") throw new Error("loadUrdfFromPayload(payload): invalid payload.");
     const opts = defaultOptions(payload.options || {});
 
+    // Up axis
     camera.up.set(0, opts.upAxis === "z" ? 0 : 1, opts.upAxis === "z" ? 1 : 0);
 
+    // Build blob URLs for STLs
     const meshUrlMap = {};
     for (const [name, b64] of Object.entries(payload.meshes || {})) {
       meshUrlMap[name] = b64ToBlobUrl(b64, "model/stl");
     }
 
+    // Rewrite URDF → blob URLs and create a blob URL for the URDF
     const urdfText = rewriteUrdfMeshFilenames(payload.urdf || "", meshUrlMap);
     const urdfBlob = new Blob([urdfText], { type: "text/xml" });
     const urdfUrl = URL.createObjectURL(urdfBlob);
 
     const stlLoader = new STLLoader();
-
     const urdfLoader = new URDFLoader();
+
+    // STL support
     urdfLoader.loadMeshCb = function (path, manager, onComplete) {
       if (/\.stl(\?.*)?$/i.test(path)) {
         stlLoader.load(path, geometry => onComplete(geometry));
       } else {
-        console.warn("Unsupported mesh type for path:", path);
+        console.warn("Unsupported mesh type:", path);
         onComplete(null);
       }
     };
 
+    // Clear prior robot if any
     if (robot) { scene.remove(robot); robot = null; }
 
-    const dist = Math.max(0.1, Number(opts.initialDistance) || 6.0);
+    // Camera distance
+    const dist = Math.max(0.1, Number(opts.initialDistance) || 8.0);
     camera.position.set(dist, dist, dist);
 
+    // Load URDF
     await new Promise((resolve, reject) => {
       urdfLoader.load(
         urdfUrl,
