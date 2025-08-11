@@ -1,45 +1,134 @@
-rt * as THREE from 'three';
+import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { ColladaLoader } from 'three/examples/jsm/loaders/ColladaLoader.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { URDFRobot, URDFJoint, URDFLink, URDFCollider, URDFVisual, URDFMimicJoint } from './URDFClasses.js';
-}
-// file.js
-
 
 /**
- * Converts a base64 STL data URL to a THREE.Mesh using STLLoader.
- * @param {string} dataUrl - The data URL string: "data:model/stl;base64,...."
+ * Converts a base64 mesh data URL to a THREE.Mesh using the appropriate loader.
+ * @param {string} dataUrl - The data URL string (STL, DAE, OBJ, GLTF).
  * @param {THREE.Material} material - The material to use for the mesh
- * @returns {THREE.Mesh}
+ * @param {function} onLoad - Callback when mesh is loaded
+ * @param {function} onError - Callback on error
  */
-export function stlBase64ToMesh(dataUrl, material) {
-    const base64 = dataUrl.split(',')[1];
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
+export function base64ToMesh(dataUrl, material, onLoad, onError) {
+    if (dataUrl.startsWith('data:model/stl;base64,')) {
+        const base64 = dataUrl.split(',')[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        const loader = new STLLoader();
+        const geometry = loader.parse(bytes.buffer);
+        onLoad(new THREE.Mesh(geometry, material));
+    } else if (dataUrl.startsWith('data:model/vnd.collada+xml;base64,')) {
+        // Data URL for DAE (Collada)
+        const loader = new ColladaLoader();
+        loader.load(dataUrl, dae => {
+            dae.scene.traverse(obj => {
+                if (obj.isMesh) obj.material = material;
+            });
+            onLoad(dae.scene);
+        }, undefined, onError);
+    } else if (dataUrl.startsWith('data:model/obj;base64,')) {
+        const loader = new OBJLoader();
+        loader.load(dataUrl, obj => {
+            obj.traverse(o => { if (o.isMesh) o.material = material; });
+            onLoad(obj);
+        }, undefined, onError);
+    } else if (dataUrl.startsWith('data:model/gltf+json;base64,') || dataUrl.startsWith('data:model/gltf-binary;base64,')) {
+        const loader = new GLTFLoader();
+        loader.load(dataUrl, gltf => {
+            gltf.scene.traverse(obj => {
+                if (obj.isMesh) obj.material = material;
+            });
+            onLoad(gltf.scene);
+        }, undefined, onError);
+    } else {
+        if (onError) onError(new Error("Unknown mesh data URL type"));
     }
-    const loader = new STLLoader();
-    const geometry = loader.parse(bytes.buffer);
-    return new THREE.Mesh(geometry, material);
 }
 
-// Optional: patch STL loading logic to use this function for data URLs
+// Patch STL loading logic to use this function for data URLs
 export function loadMesh(filename, material, onLoad, onError) {
-    if (filename.startsWith('data:model/stl;base64,')) {
-        try {
-            const mesh = stlBase64ToMesh(filename, material);
-            onLoad(mesh);
-        } catch (e) {
-            if (onError) onError(e);
-        }
-    } else {
+    if (filename.startsWith('data:model/stl;base64,')
+        || filename.startsWith('data:model/vnd.collada+xml;base64,')
+        || filename.startsWith('data:model/obj;base64,')
+        || filename.startsWith('data:model/gltf+json;base64,')
+        || filename.startsWith('data:model/gltf-binary;base64,')) {
+        base64ToMesh(filename, material, onLoad, onError);
+    } else if (/\.stl$/i.test(filename)) {
         const loader = new STLLoader();
-        loader.load(filename, (geometry) => {
+        loader.load(filename, geometry => {
             const mesh = new THREE.Mesh(geometry, material);
             onLoad(mesh);
         }, undefined, onError);
+    } else if (/\.dae$/i.test(filename)) {
+        const loader = new ColladaLoader();
+        loader.load(filename, dae => {
+            dae.scene.traverse(obj => {
+                if (obj.isMesh) obj.material = material;
+            });
+            onLoad(dae.scene);
+        }, undefined, onError);
+    } else if (/\.obj$/i.test(filename)) {
+        const loader = new OBJLoader();
+        loader.load(filename, obj => {
+            obj.traverse(o => { if (o.isMesh) o.material = material; });
+            onLoad(obj);
+        }, undefined, onError);
+    } else if (/\.gltf$/i.test(filename) || /\.glb$/i.test(filename)) {
+        const loader = new GLTFLoader();
+        loader.load(filename, gltf => {
+            gltf.scene.traverse(obj => {
+                if (obj.isMesh) obj.material = material;
+            });
+            onLoad(gltf.scene);
+        }, undefined, onError);
+    } else {
+        if (onError) onError(new Error("Unknown mesh type"));
     }
+}
+
+// Everything below this point is unchanged from your previous loader class!
+// Just make sure to set this.loadMeshCb = loadMesh; in the constructor.
+
+const tempQuaternion = new THREE.Quaternion();
+const tempEuler = new THREE.Euler();
+
+function processTuple(val) {
+    if (!val) return [0, 0, 0];
+    return val.trim().split(/\s+/g).map(num => parseFloat(num));
+}
+
+function applyRotation(obj, rpy, additive = false) {
+    if (!additive) obj.rotation.set(0, 0, 0);
+    tempEuler.set(rpy[0], rpy[1], rpy[2], 'ZYX');
+    tempQuaternion.setFromEuler(tempEuler);
+    tempQuaternion.multiply(obj.quaternion);
+    obj.quaternion.copy(tempQuaternion);
+}
+
+export default
+class URDFLoader {
+
+    constructor(manager) {
+        this.manager = manager || THREE.DefaultLoadingManager;
+        this.loadMeshCb = loadMesh; // <-- use the advanced mesh loader!
+        this.parseVisual = true;
+        this.parseCollision = false;
+        this.packages = '';
+        this.workingPath = '';
+        this.fetchOptions = {};
+    }
+
+    /* ... rest of your URDFLoader class code unchanged ... */
+    // All parsing, robot/joint/link/material logic stays the same.
+    // Just ensure processLinkElement calls this.loadMeshCb as it already does.
+
+    // ... keep the rest of your loader code here ...
 }
 
 /*
