@@ -43,7 +43,7 @@ function rewriteUrdfMeshFilenames(urdfText, mapping) {
 function defaultOptions(user) {
   return {
     upAxis: "z",
-    initialDistance: 8.0,
+    initialDistance: 10.0,
     castShadows: true,
     background: "#0b0b0b",
     showGrid: true,
@@ -70,7 +70,7 @@ export default async function initViewer(container) {
 
   // Camera / controls
   const camera = new PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 2000);
-  camera.position.set(8, 8, 8);
+  camera.position.set(10, 10, 10);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -144,7 +144,7 @@ export default async function initViewer(container) {
     if (robot) { scene.remove(robot); robot = null; }
 
     // Camera distance
-    const dist = Math.max(0.1, Number(opts.initialDistance) || 8.0);
+    const dist = Math.max(0.1, Number(opts.initialDistance) || 10.0);
     camera.position.set(dist, dist, dist);
 
     // Load URDF
