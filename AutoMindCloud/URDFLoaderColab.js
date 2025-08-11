@@ -1,27 +1,38 @@
 // AutoMindCloud/URDFLoaderColab.js
-// Serve via jsDelivr:
-//   https://cdn.jsdelivr.net/gh/ArtemioA/AutoMindCloud/AutoMindCloud/URDFLoaderColab.js
+// Serve via jsDelivr, e.g.:
+// https://cdn.jsdelivr.net/gh/ArtemioA/AutoMindCloud/AutoMindCloud/URDFLoaderColab.js
 
 const IMPORT_MAP = {
   three: "https://cdn.jsdelivr.net/npm/three@0.127.0/build/three.module.js",
   controls: "https://cdn.jsdelivr.net/npm/three@0.127.0/examples/jsm/controls/OrbitControls.js",
-  stlloader: "https://cdn.jsdelivr.net/npm/three@0.127.0/examples/jsm/loaders/STLLoader.js",
+  stl: "https://cdn.jsdelivr.net/npm/three@0.127.0/examples/jsm/loaders/STLLoader.js",
+  // If you ever need Collada later, uncomment this and the code in loadMeshCb
+  // collada: "https://cdn.jsdelivr.net/npm/three@0.127.0/examples/jsm/loaders/ColladaLoader.js",
   urdf: "https://cdn.jsdelivr.net/npm/urdf-loader@0.10.1/src/URDFLoader.js"
 };
 
 async function loadModules() {
   const [
-    { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight, PCFSoftShadowMap, Color, sRGBEncoding, ACESFilmicToneMapping, GridHelper, HemisphereLight, Vector3 },
+    t,
     { OrbitControls },
     { STLLoader },
     { default: URDFLoader }
   ] = await Promise.all([
     import(IMPORT_MAP.three),
     import(IMPORT_MAP.controls),
-    import(IMPORT_MAP.stlloader),
+    import(IMPORT_MAP.stl),
     import(IMPORT_MAP.urdf)
   ]);
-  return { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight, PCFSoftShadowMap, Color, sRGBEncoding, ACESFilmicToneMapping, GridHelper, HemisphereLight, Vector3, OrbitControls, STLLoader, URDFLoader };
+  const {
+    Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight,
+    HemisphereLight, GridHelper, Color, PCFSoftShadowMap, sRGBEncoding,
+    ACESFilmicToneMapping
+  } = t;
+  return {
+    Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight,
+    HemisphereLight, GridHelper, Color, PCFSoftShadowMap, sRGBEncoding,
+    ACESFilmicToneMapping, OrbitControls, STLLoader, URDFLoader
+  };
 }
 
 function b64ToBlobUrl(b64, mime = "model/stl") {
@@ -40,26 +51,30 @@ function rewriteUrdfMeshFilenames(urdfText, mapping) {
   });
 }
 
-function defaultOptions(user) {
+function defaults(overrides = {}) {
   return {
     upAxis: "z",
-    initialDistance: 10.0,
+    initialDistance: 10,
     castShadows: true,
     background: "#0b0b0b",
     showGrid: true,
-    ...user
+    ...overrides
   };
 }
 
 export default async function initViewer(container) {
-  if (!container) throw new Error("initViewer(container): container is required.");
-  const { Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight, PCFSoftShadowMap, Color, sRGBEncoding, ACESFilmicToneMapping, GridHelper, HemisphereLight, Vector3, OrbitControls, STLLoader, URDFLoader } = await loadModules();
+  if (!container) throw new Error("initViewer(container) requires a container element");
+  const {
+    Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight,
+    HemisphereLight, GridHelper, Color, PCFSoftShadowMap, sRGBEncoding,
+    ACESFilmicToneMapping, OrbitControls, STLLoader, URDFLoader
+  } = await loadModules();
 
-  // Scene / renderer
+  // Scene & renderer
   const scene = new Scene();
   scene.background = new Color("#0b0b0b");
 
-  const renderer = new WebGLRenderer({ antialias: true, alpha: false });
+  const renderer = new WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio || 1);
   renderer.setSize(container.clientWidth, container.clientHeight, false);
   renderer.outputEncoding = sRGBEncoding;
@@ -68,7 +83,7 @@ export default async function initViewer(container) {
   renderer.shadowMap.type = PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
-  // Camera / controls
+  // Camera & controls
   const camera = new PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 2000);
   camera.position.set(10, 10, 10);
 
@@ -77,18 +92,15 @@ export default async function initViewer(container) {
   controls.dampingFactor = 0.08;
   controls.target.set(0, 0, 0);
 
-  // Lights
-  const hemi = new HemisphereLight(0xffffff, 0x444444, 0.6);
-  scene.add(hemi);
+  // Lights & grid
+  scene.add(new HemisphereLight(0xffffff, 0x444444, 0.6));
   const dir = new DirectionalLight(0xffffff, 1.0);
   dir.position.set(5, 10, 7);
   dir.castShadow = true;
   dir.shadow.mapSize.set(1024, 1024);
   scene.add(dir);
-  const amb = new AmbientLight(0xffffff, 0.2);
-  scene.add(amb);
+  scene.add(new AmbientLight(0xffffff, 0.2));
 
-  // Grid
   const grid = new GridHelper(10, 20, 0x444444, 0x222222);
   grid.visible = true;
   scene.add(grid);
@@ -110,50 +122,58 @@ export default async function initViewer(container) {
   }
 
   async function loadUrdfFromPayload(payload) {
-    if (!payload || typeof payload !== "object") throw new Error("loadUrdfFromPayload(payload): invalid payload.");
-    const opts = defaultOptions(payload.options || {});
+    if (!payload || typeof payload !== "object") throw new Error("Invalid payload");
+    const opts = defaults(payload.options);
 
     // Up axis
     camera.up.set(0, opts.upAxis === "z" ? 0 : 1, opts.upAxis === "z" ? 1 : 0);
 
-    // Build blob URLs for STLs
+    // Build blob URLs for STLs (payload expects { "name.stl": "<b64>" })
     const meshUrlMap = {};
     for (const [name, b64] of Object.entries(payload.meshes || {})) {
       meshUrlMap[name] = b64ToBlobUrl(b64, "model/stl");
     }
 
-    // Rewrite URDF → blob URLs and create a blob URL for the URDF
+    // Rewrite URDF mesh filenames to blob URLs
     const urdfText = rewriteUrdfMeshFilenames(payload.urdf || "", meshUrlMap);
     const urdfBlob = new Blob([urdfText], { type: "text/xml" });
     const urdfUrl = URL.createObjectURL(urdfBlob);
 
+    // Loaders
     const stlLoader = new STLLoader();
     const urdfLoader = new URDFLoader();
 
-    // STL support
-    urdfLoader.loadMeshCb = function (path, manager, onComplete) {
+    // Only STL is supported here; add Collada if you need it (commented below).
+    urdfLoader.loadMeshCb = async function(path, manager, onComplete) {
       if (/\.stl(\?.*)?$/i.test(path)) {
         stlLoader.load(path, geometry => onComplete(geometry));
-      } else {
-        console.warn("Unsupported mesh type:", path);
-        onComplete(null);
+        return;
       }
+
+      // // Optional DAE support (uncomment if your URDF uses .dae):
+      // if (/\.dae(\?.*)?$/i.test(path)) {
+      //   const { ColladaLoader } = await import(IMPORT_MAP.collada);
+      //   const daeLoader = new ColladaLoader();
+      //   daeLoader.load(path, collada => onComplete(collada.scene));
+      //   return;
+      // }
+
+      console.warn("Unsupported mesh type:", path);
+      onComplete(null);
     };
 
-    // Clear prior robot if any
+    // Clear previous robot
     if (robot) { scene.remove(robot); robot = null; }
 
     // Camera distance
-    const dist = Math.max(0.1, Number(opts.initialDistance) || 10.0);
+    const dist = Math.max(0.1, Number(opts.initialDistance) || 10);
     camera.position.set(dist, dist, dist);
 
-    // Load URDF
     await new Promise((resolve, reject) => {
       urdfLoader.load(
         urdfUrl,
         (urdf) => {
           robot = urdf;
-          if (opts.upAxis !== "z") robot.rotation.x = -Math.PI / 2;
 
           if (opts.castShadows) {
             robot.traverse(obj => {
@@ -162,6 +182,8 @@ export default async function initViewer(container) {
             });
           }
 
+          if (opts.upAxis !== "z") robot.rotation.x = -Math.PI / 2;
+
           controls.target.set(0, 0, 0);
           controls.update();
 
@@ -169,13 +191,13 @@ export default async function initViewer(container) {
           resolve();
         },
         undefined,
-        (err) => reject(err)
+        reject
       );
     });
 
-    setBackground(opts.background || "#0b0b0b");
+    setBackground(opts.background);
     setGrid(!!opts.showGrid);
-    console.log("[Viewer] URDF loaded. Meshes:", Object.keys(payload.meshes || {}).length);
+    console.log("[Viewer] URDF loaded. Embedded STL files:", Object.keys(payload.meshes || {}).length);
   }
 
   function onResize() {
