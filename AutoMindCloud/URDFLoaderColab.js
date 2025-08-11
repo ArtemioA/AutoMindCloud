@@ -1,40 +1,16 @@
 // AutoMindCloud/URDFLoaderColab.js
-// Serve via jsDelivr, e.g.:
-// https://cdn.jsdelivr.net/gh/ArtemioA/AutoMindCloud/AutoMindCloud/URDFLoaderColab.js
+// This version uses BARE imports and expects an IMPORT MAP in the HTML/Colab page.
 
-const IMPORT_MAP = {
-  three: "https://cdn.jsdelivr.net/npm/three@0.127.0/build/three.module.js",
-  controls: "https://cdn.jsdelivr.net/npm/three@0.127.0/examples/jsm/controls/OrbitControls.js",
-  stl: "https://cdn.jsdelivr.net/npm/three@0.127.0/examples/jsm/loaders/STLLoader.js",
-  // If you ever need Collada later, uncomment this and the code in loadMeshCb
-  // collada: "https://cdn.jsdelivr.net/npm/three@0.127.0/examples/jsm/loaders/ColladaLoader.js",
-  urdf: "https://cdn.jsdelivr.net/npm/urdf-loader@0.10.1/src/URDFLoader.js"
-};
+import {
+  Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight,
+  HemisphereLight, GridHelper, Color, PCFSoftShadowMap, sRGBEncoding, ACESFilmicToneMapping
+} from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+// If you need DAE later, we'll lazy-import ColladaLoader inside loadMeshCb via the import map.
+import URDFLoader from "urdf-loader";
 
-async function loadModules() {
-  const [
-    t,
-    { OrbitControls },
-    { STLLoader },
-    { default: URDFLoader }
-  ] = await Promise.all([
-    import(IMPORT_MAP.three),
-    import(IMPORT_MAP.controls),
-    import(IMPORT_MAP.stl),
-    import(IMPORT_MAP.urdf)
-  ]);
-  const {
-    Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight,
-    HemisphereLight, GridHelper, Color, PCFSoftShadowMap, sRGBEncoding,
-    ACESFilmicToneMapping
-  } = t;
-  return {
-    Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight,
-    HemisphereLight, GridHelper, Color, PCFSoftShadowMap, sRGBEncoding,
-    ACESFilmicToneMapping, OrbitControls, STLLoader, URDFLoader
-  };
-}
-
+// --- helpers ---
 function b64ToBlobUrl(b64, mime = "model/stl") {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
@@ -62,13 +38,9 @@ function defaults(overrides = {}) {
   };
 }
 
+// --- main ---
 export default async function initViewer(container) {
-  if (!container) throw new Error("initViewer(container) requires a container element");
-  const {
-    Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight,
-    HemisphereLight, GridHelper, Color, PCFSoftShadowMap, sRGBEncoding,
-    ACESFilmicToneMapping, OrbitControls, STLLoader, URDFLoader
-  } = await loadModules();
+  if (!container) throw new Error("initViewer(container): container element is required.");
 
   // Scene & renderer
   const scene = new Scene();
@@ -128,7 +100,7 @@ export default async function initViewer(container) {
     // Up axis
     camera.up.set(0, opts.upAxis === "z" ? 0 : 1, opts.upAxis === "z" ? 1 : 0);
 
-    // Build blob URLs for STLs (payload expects { "name.stl": "<b64>" })
+    // Build blob URLs for STLs
     const meshUrlMap = {};
     for (const [name, b64] of Object.entries(payload.meshes || {})) {
       meshUrlMap[name] = b64ToBlobUrl(b64, "model/stl");
@@ -143,22 +115,43 @@ export default async function initViewer(container) {
     const stlLoader = new STLLoader();
     const urdfLoader = new URDFLoader();
 
-    // Only STL is supported here; add Collada if you need it (commented below).
-    urdfLoader.loadMeshCb = async function(path, manager, onComplete) {
-      if (/\.stl(\?.*)?$/i.test(path)) {
-        stlLoader.load(path, geometry => onComplete(geometry));
+    // Accept STL from normal .stl URLs, blob: URLs, and data:model/stl;base64 URLs
+    urdfLoader.loadMeshCb = async function (path, manager, onComplete) {
+      const p = String(path || "");
+      const isBlob = p.startsWith("blob:");
+      const isDataStl = p.startsWith("data:model/stl");
+      const isStlExt = /\.stl(\?.*)?$/i.test(p);
+
+      if (isStlExt || isBlob || isDataStl) {
+        stlLoader.load(
+          p,
+          geometry => onComplete(geometry),
+          undefined,
+          err => {
+            console.error("STL load error:", p, err);
+            onComplete(null);
+          }
+        );
         return;
       }
 
-      // // Optional DAE support (uncomment if your URDF uses .dae):
-      // if (/\.dae(\?.*)?$/i.test(path)) {
-      //   const { ColladaLoader } = await import(IMPORT_MAP.collada);
+      // OPTIONAL: enable DAE support if your URDF references .dae
+      // if (/\.dae(\?.*)?$/i.test(p)) {
+      //   const { ColladaLoader } = await import("three/examples/jsm/loaders/ColladaLoader.js");
       //   const daeLoader = new ColladaLoader();
-      //   daeLoader.load(path, collada => onComplete(collada.scene));
+      //   daeLoader.load(
+      //     p,
+      //     collada => onComplete(collada.scene),
+      //     undefined,
+      //     err => {
+      //       console.error("DAE load error:", p, err);
+      //       onComplete(null);
+      //     }
+      //   );
       //   return;
       // }
 
-      console.warn("Unsupported mesh type:", path);
+      console.warn("Unsupported mesh type:", p);
       onComplete(null);
     };
 
