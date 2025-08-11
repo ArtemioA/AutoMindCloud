@@ -51,6 +51,87 @@ function applyRotation(obj, rpy, additive = false) {
 
 }
 
+/** -------------------------------------------
+ * BASE64 UTILS FOR COLAB EXPORT & IMPORT
+ * ------------------------------------------- */
+
+/**
+ * Decode a base64 data URL and trigger a download in browser.
+ * @param {string} dataUrl - e.g. "data:model/stl;base64,...."
+ * @param {string} filename - Name for the downloaded file.
+ */
+export function downloadBase64File(dataUrl, filename) {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    const n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+    const blob = new Blob([u8arr], { type: mime });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+}
+
+/**
+ * Decode a raw base64 string (not a data URL) and save as a file.
+ * @param {string} base64Str
+ * @param {string} mime
+ * @param {string} filename
+ */
+export function downloadRawBase64(base64Str, mime, filename) {
+    const bstr = atob(base64Str);
+    const n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+    const blob = new Blob([u8arr], { type: mime });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+}
+
+/**
+ * Download a base64-encoded URDF (.urdf) file.
+ * @param {string} urdfBase64 - base64 string, not data url.
+ * @param {string} filename
+ */
+export function downloadURDF(urdfBase64, filename='model.urdf') {
+    downloadRawBase64(urdfBase64, 'text/xml', filename);
+}
+
+/**
+ * Download a base64-encoded STL file.
+ * @param {string} stlBase64 - base64 string, not data url.
+ * @param {string} filename
+ */
+export function downloadSTL(stlBase64, filename='mesh.stl') {
+    downloadRawBase64(stlBase64, 'model/stl', filename);
+}
+
+/** Patch STLLoader to handle base64 data URLs (for viewer) **/
+export function patchSTLLoaderForBase64(stlLoader) {
+    const originalLoad = stlLoader.load.bind(stlLoader);
+    stlLoader.load = function(url, onLoad, onProgress, onError) {
+        if (url.startsWith('data:model/stl;base64,')) {
+            try {
+                const base64Data = url.split(',')[1];
+                const buffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+                const geometry = stlLoader.parse(buffer.buffer);
+                if (onLoad) onLoad(geometry);
+            } catch (e) {
+                if (onError) onError(e);
+            }
+        } else {
+            originalLoad(url, onLoad, onProgress, onError);
+        }
+    };
+    return stlLoader;
+}
+
+// --- Your original URDFLoader code below ---
+
 /* URDFLoader Class */
 // Loads and reads a URDF file into a THREEjs Object3D format
 export default
@@ -642,6 +723,7 @@ class URDFLoader {
         if (/\.stl$/i.test(path)) {
 
             const loader = new STLLoader(manager);
+            patchSTLLoaderForBase64(loader);
             loader.load(path, geom => {
                 const mesh = new THREE.Mesh(geom, new THREE.MeshPhongMaterial());
                 done(mesh);
