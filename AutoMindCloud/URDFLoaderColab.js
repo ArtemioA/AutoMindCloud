@@ -1,5 +1,6 @@
 // AutoMindCloud/URDFLoaderColab.js
-// This version uses BARE imports and expects an IMPORT MAP in the HTML/Colab page.
+// This version uses BARE imports. Your HTML/Colab page must include an <script type="importmap">.
+// See the Colab cell I gave you previously for the importmap block.
 
 import {
   Scene, PerspectiveCamera, WebGLRenderer, DirectionalLight, AmbientLight,
@@ -7,10 +8,11 @@ import {
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
-// If you need DAE later, we'll lazy-import ColladaLoader inside loadMeshCb via the import map.
+// Optional DAE support can be lazy-imported inside loadMeshCb if needed.
+// import { ColladaLoader } from "three/examples/jsm/loaders/ColladaLoader.js";
 import URDFLoader from "urdf-loader";
 
-// --- helpers ---
+// ---------- helpers ----------
 function b64ToBlobUrl(b64, mime = "model/stl") {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
@@ -27,6 +29,17 @@ function rewriteUrdfMeshFilenames(urdfText, mapping) {
   });
 }
 
+// Normalize URLs that get mangled by URDFLoader resolution, e.g.
+// "blob:https://.../blob:https://.../<uuid>" -> "blob:https://.../<uuid>"
+function normalizeUrl(p) {
+  const s = String(p || "");
+  const lastBlob = s.lastIndexOf("blob:");
+  const lastData = s.lastIndexOf("data:");
+  if (lastBlob > 0) return s.slice(lastBlob);
+  if (lastData > 0) return s.slice(lastData);
+  return s;
+}
+
 function defaults(overrides = {}) {
   return {
     upAxis: "z",
@@ -38,7 +51,7 @@ function defaults(overrides = {}) {
   };
 }
 
-// --- main ---
+// ---------- main ----------
 export default async function initViewer(container) {
   if (!container) throw new Error("initViewer(container): container element is required.");
 
@@ -115,9 +128,10 @@ export default async function initViewer(container) {
     const stlLoader = new STLLoader();
     const urdfLoader = new URDFLoader();
 
-    // Accept STL from normal .stl URLs, blob: URLs, and data:model/stl;base64 URLs
+    // Accept STL from .stl, blob:, and data:model/stl; normalize "double-blob" URLs from URDFLoader
     urdfLoader.loadMeshCb = async function (path, manager, onComplete) {
-      const p = String(path || "");
+      let p = normalizeUrl(path);
+
       const isBlob = p.startsWith("blob:");
       const isDataStl = p.startsWith("data:model/stl");
       const isStlExt = /\.stl(\?.*)?$/i.test(p);
@@ -135,7 +149,7 @@ export default async function initViewer(container) {
         return;
       }
 
-      // OPTIONAL: enable DAE support if your URDF references .dae
+      // OPTIONAL: enable DAE if your URDF references .dae files
       // if (/\.dae(\?.*)?$/i.test(p)) {
       //   const { ColladaLoader } = await import("three/examples/jsm/loaders/ColladaLoader.js");
       //   const daeLoader = new ColladaLoader();
