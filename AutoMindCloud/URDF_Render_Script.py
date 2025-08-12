@@ -1,4 +1,4 @@
-import base64, re, os, json
+.import base64, re, os, json
 from IPython.display import HTML
 
 def URDF_Render(folder_path: str = "model"):
