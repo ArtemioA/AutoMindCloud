@@ -8,7 +8,7 @@ from IPython.display import display,HTML
 import gdown
 import os
 
-def Download_Step_2(Drive_Link, Output_Name):
+def Download_Step(Drive_Link, Output_Name):
     """
     Downloads a STEP file from Google Drive using the full Drive link.
     Saves it as Output_Name.step in /content.
