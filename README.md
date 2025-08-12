@@ -9,12 +9,10 @@ Example on Colab: https://colab.research.google.com/drive/1cwDrG9dbK1MfyaiI2gRaX
 
 More Examples
 
-Heat Transfer by Conduction:
+Heat Transfer by Conduction: https://colab.research.google.com/drive/1BukgVekSpaFWaPCdTEhVIUdaAJPGtnz1
 
-Eletromagnetism:
+Eletromagnetism: https://colab.research.google.com/drive/1hJzAv6H5JG4P9kzMewav-Ne3ZhjSPm31
 
-Microeconomics:
-
-Financial Accounting:
+Financial Accounting: https://colab.research.google.com/drive/1o4EPhvSMvY98NPEDpoawn97fGyW6YrvK
 
 
