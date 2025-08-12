@@ -1,5 +1,48 @@
 import base64, re, os, json
 from IPython.display import HTML
+import gdown, zipfile, os, shutil
+
+def Download_URDF(Drive_Link, Output_Name="Model"):
+    """
+    Downloads a ZIP file from Google Drive, names it Output_Name.zip,
+    and extracts it into a folder named Output_Name inside /content.
+    No console prints, returns the extracted folder path.
+    """
+    root_dir = "/content"  # Always fixed
+    file_id = Drive_Link.split('/d/')[1].split('/')[0]
+    download_url = f'https://drive.google.com/uc?id={file_id}'
+    zip_path = os.path.join(root_dir, Output_Name + ".zip")
+    tmp_extract = os.path.join(root_dir, f"__tmp_extract_{Output_Name}")
+    final_dir = os.path.join(root_dir, Output_Name)
+
+    # Clean old data
+    if os.path.exists(tmp_extract):
+        shutil.rmtree(tmp_extract)
+    os.makedirs(tmp_extract, exist_ok=True)
+    if os.path.exists(final_dir):
+        shutil.rmtree(final_dir)
+
+    # Download ZIP
+    gdown.download(download_url, zip_path, quiet=True)
+
+    # Extract
+    with zipfile.ZipFile(zip_path, 'r') as zf:
+        zf.extractall(tmp_extract)
+
+    # Move/rename folder
+    def is_junk(name):
+        return name.startswith('.') or name == '__MACOSX'
+
+    top_items = [n for n in os.listdir(tmp_extract) if not is_junk(n)]
+    if len(top_items) == 1 and os.path.isdir(os.path.join(tmp_extract, top_items[0])):
+        shutil.move(os.path.join(tmp_extract, top_items[0]), final_dir)
+    else:
+        os.makedirs(final_dir, exist_ok=True)
+        for n in top_items:
+            shutil.move(os.path.join(tmp_extract, n), os.path.join(final_dir, n))
+
+    shutil.rmtree(tmp_extract, ignore_errors=True)
+    return final_dir
 
 def URDF_Render(folder_path: str = "model"):
     # --- resolve folders (supports model/ and model/model/) ---
