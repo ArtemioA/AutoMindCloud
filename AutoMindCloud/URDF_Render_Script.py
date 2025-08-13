@@ -42,7 +42,6 @@ def Download_URDF(Drive_Link, Output_Name="Model"):
             shutil.move(os.path.join(tmp_extract, n), os.path.join(final_dir, n))
 
     shutil.rmtree(tmp_extract, ignore_errors=True)
-    return final_dir
 
 def URDF_Render(folder_path: str = "model"):
     # --- resolve folders (supports model/ and model/model/) ---
