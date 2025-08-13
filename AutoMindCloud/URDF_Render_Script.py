@@ -472,4 +472,4 @@ def URDF_Render(folder_path: str = "model"):
     html = html.replace("/*__MESH_DB__*/ {}", json.dumps(mesh_db))
     html = html.replace("/*__URDF_CONTENT__*/", esc_js(urdf_raw))
     
-return HTML(html)
+    return HTML(html)
