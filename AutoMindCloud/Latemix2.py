@@ -36,7 +36,7 @@ import re
 
 #from AutoMindCloud.LatexRenderScript import DatosList,Orden,Color
 
-from AutoMindCloud.Latex_Render_Script import *
+from AutoMindCloud.Automatic_Evaluation_Script import *
 
 import IPython
 
@@ -1611,7 +1611,7 @@ class LatexPrinter(Printer):
         if expr in self._settings['symbol_names']:
             return self._settings['symbol_names'][expr]
 
-        from AutoMindCloud.Latex_Render_Script import search
+        from AutoMindCloud.Automatic_Evaluation_Script import search
         return self._deal_with_super_sub(search(expr,DatosList), style=style)#expr.name
 
     _print_RandomSymbol = _print_Symbol
