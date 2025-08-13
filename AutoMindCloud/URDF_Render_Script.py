@@ -32,7 +32,7 @@ def Download_URDF(Drive_Link, Output_Name="Model"):
 
     shutil.rmtree(tmp_extract, ignore_errors=True)
 
-def URDF_Render_8(folder_path: str = "model"):
+def URDF_Render(folder_path: str = "model"):
     # --- locate urdf/ and meshes/ (one level deep allowed) ---
     def find_dirs(root):
         d_u, d_m = os.path.join(root,"urdf"), os.path.join(root,"meshes")
