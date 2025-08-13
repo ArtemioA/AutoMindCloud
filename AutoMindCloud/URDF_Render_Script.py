@@ -1,12 +1,12 @@
 import base64, re, os, json
 from IPython.display import HTML
-import gdown, zipfile, os, shutil
+import gdown, zipfile, shutil
 
 def Download_URDF(Drive_Link, Output_Name="Model"):
     """
     Downloads a ZIP file from Google Drive, names it Output_Name.zip,
     and extracts it into a folder named Output_Name inside /content.
-    No console prints, returns the extracted folder path.
+    Returns the extracted folder path.
     """
     root_dir = "/content"  # Always fixed
     file_id = Drive_Link.split('/d/')[1].split('/')[0]
@@ -42,6 +42,7 @@ def Download_URDF(Drive_Link, Output_Name="Model"):
             shutil.move(os.path.join(tmp_extract, n), os.path.join(final_dir, n))
 
     shutil.rmtree(tmp_extract, ignore_errors=True)
+    return final_dir
 
 def URDF_Render(folder_path: str = "model"):
     # --- resolve folders (supports model/ and model/model/) ---
@@ -107,22 +108,37 @@ def URDF_Render(folder_path: str = "model"):
         if bn.endswith((".png",".jpg",".jpeg")) and bn not in mesh_db:
             add_entry(bn, p)
 
-    # HTML with IIFE to avoid global re-declarations
+    # HTML with centered "box" viewer (no borders/radius/shadow) + image badge bottom-right
     html = r"""<!doctype html>
 <html>
 <head>
 <meta charset="utf-8"/>
 <title>URDF Viewer</title>
 <style>
-  :root { --bg:#f5f6fa; --card:#fff; --border:#e6e8ee; }
+  :root { --bg:#f5f6fa; --card:#fff; }
   html,body{height:100%;margin:0;background:var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
   #wrap{display:flex;align-items:center;justify-content:center;height:100%;padding:16px;box-sizing:border-box}
-  #viewer{position:relative;width:min(1200px,95vw);height:min(80vh,820px);background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.06)}
-  .badge{position:absolute;right:14px;bottom:12px;padding:8px 12px;font-size:12px;background:rgba(15,23,42,.06);border:1px solid rgba(15,23,42,.08);border-radius:10px;backdrop-filter:blur(3px);user-select:none;pointer-events:none}
+  /* centered box, no custom borders/radius/shadow */
+  #viewer{position:relative;width:min(1200px,95vw);height:min(80vh,820px);background:var(--card);overflow:hidden}
+  .badge{
+      position:absolute;
+      right:14px;
+      bottom:12px;
+      user-select:none;
+      pointer-events:none;
+  }
+  .badge img{
+      max-height:40px;
+      display:block;
+  }
 </style>
 </head>
 <body>
-<div id="wrap"><div id="viewer"><div class="badge">URDF Loader on Colab by AutoMind</div></div></div>
+<div id="wrap"><div id="viewer">
+  <div class="badge">
+    <img src="https://i.gyazo.com/30a9ecbd8f1a0483a7e07a10eaaa8522.png" alt="badge"/>
+  </div>
+</div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
@@ -253,7 +269,7 @@ def URDF_Render(folder_path: str = "model"):
     }catch(e){ done(new THREE.Mesh()); }
   };
 
-  // scoped state (NOT global const name collisions)
+  // scoped state
   const api = { scene, camera, renderer, controls, robotModel:null, linkSet:null, linkToJoint:null };
 
   function buildLinkMaps(robot){
