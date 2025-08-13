@@ -31,9 +31,8 @@ def Download_URDF(Drive_Link, Output_Name="Model"):
         for n in top: shutil.move(os.path.join(tmp_extract, n), os.path.join(final_dir, n))
 
     shutil.rmtree(tmp_extract, ignore_errors=True)
-    return final_dir
 
-def URDF_Render(folder_path: str = "model"):
+def URDF_Render_8(folder_path: str = "model"):
     # --- locate urdf/ and meshes/ (one level deep allowed) ---
     def find_dirs(root):
         d_u, d_m = os.path.join(root,"urdf"), os.path.join(root,"meshes")
@@ -99,7 +98,7 @@ def URDF_Render(folder_path: str = "model"):
         if bn.endswith((".png",".jpg",".jpeg")) and bn not in mesh_db:
             add_entry(bn, p)
 
-    # === Full-screen HTML (only badge overlay) ===
+    # === Full-screen HTML (only badge overlay) with axis rectification ===
     html = r"""<!doctype html>
 <html lang="en">
 <head>
@@ -203,7 +202,10 @@ def URDF_Render(folder_path: str = "model"):
   function scheduleFit(){
     if (fitTimer) clearTimeout(fitTimer);
     fitTimer = setTimeout(() => {
-      if (pendingMeshes === 0 && api.robotModel) fitAndCenter(api.robotModel);
+      if (pendingMeshes === 0 && api.robotModel) {
+        rectifyUpForward(api.robotModel);   // <-- ensure symmetric, upright
+        fitAndCenter(api.robotModel);       // preserve previous centering feel
+      }
     }, 80);
   }
 
@@ -220,6 +222,16 @@ def URDF_Render(folder_path: str = "model"):
     camera.updateProjectionMatrix();
     camera.position.copy(center.clone().add(new THREE.Vector3(dist, dist*0.9, dist)));
     controls.target.copy(center); controls.update();
+  }
+
+  // --- rectify URDF (ROS Z-up, X-forward) to Three.js (Y-up, Z-forward) ---
+  function rectifyUpForward(obj){
+    // If already rectified once, skip
+    if (obj.userData.__rectified) return;
+    // Rotate -90° about X to convert Z-up -> Y-up
+    obj.rotateX(-Math.PI/2);
+    obj.userData.__rectified = true;
+    obj.updateMatrixWorld(true);
   }
 
   urdfLoader.loadMeshCb = (path, manager, onComplete) => {
@@ -452,6 +464,8 @@ def URDF_Render(folder_path: str = "model"):
       const robot = urdfLoader.parse(urdfContent);
       if (robot?.isObject3D){
         api.robotModel = robot; scene.add(api.robotModel);
+        // Rectify right away so hover/drag & fit use corrected axes:
+        rectifyUpForward(api.robotModel);
         setTimeout(buildLinkMapsAndFit, 30);
       }
     }catch(e){}
@@ -479,4 +493,3 @@ def URDF_Render(folder_path: str = "model"):
     html = html.replace("/*__MESH_DB__*/ {}", json.dumps(mesh_db))
     html = html.replace("/*__URDF_CONTENT__*/", esc_js(urdf_raw))
     return HTML(html)
-
