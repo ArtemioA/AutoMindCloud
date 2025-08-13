@@ -1,220 +1,157 @@
-import os
-import shutil
-import base64
+import sympy
 import gdown
-import trimesh
 import cascadio
-from IPython.display import display, HTML
+import trimesh
+import base64
+from IPython.display import display,HTML
 
-# -----------------------
-# Helpers for output dir
-# -----------------------
-def _stem(path: str) -> str:
-    return os.path.splitext(os.path.basename(path))[0]
+import gdown
+import os
 
-def derive_output_base(stl_path: str = None, zip_path: str = None, fallback: str = None) -> str:
-    if stl_path and os.path.splitext(stl_path)[1].lower() == ".stl":
-        return _stem(stl_path)
-    if zip_path and os.path.splitext(zip_path)[1].lower() == ".zip":
-        return _stem(zip_path)
-    if fallback:
-        return fallback
-    raise ValueError("Cannot derive output base name. Provide stl_path, zip_path, or fallback.")
-
-def ensure_output_dir(base_name: str, root_dir: str = "/content") -> str:
-    out_dir = os.path.join(root_dir, base_name)
-    os.makedirs(out_dir, exist_ok=True)
-    return out_dir
-
-def copy_stl_into_folder(stl_path: str, out_dir: str):
-    if stl_path and os.path.exists(stl_path):
-        shutil.copy2(stl_path, os.path.join(out_dir, os.path.basename(stl_path)))
-
-def _persist_glb(cascadio_result, output_glb: str):
+def Download_Step(Drive_Link, Output_Name):
     """
-    Make sure output_glb exists on disk.
-    cascadio_result may be:
-      - None (function wrote to disk)
-      - bytes (raw GLB)
-      - str (base64 or path)
+    Downloads a STEP file from Google Drive using the full Drive link.
+    Saves it as Output_Name.step in /content.
     """
-    if os.path.exists(output_glb):
-        return
-
-    if cascadio_result is None:
-        # Nothing returned; assume cascadio wrote to disk but maybe to a different path.
-        # If still missing, it's an error.
-        if not os.path.exists(output_glb):
-            raise RuntimeError(f"GLB was not created at: {output_glb}")
-        return
-
-    if isinstance(cascadio_result, (bytes, bytearray)):
-        with open(output_glb, "wb") as f:
-            f.write(cascadio_result)
-        return
-
-    if isinstance(cascadio_result, str):
-        # Try base64 first
-        try:
-            raw = base64.b64decode(cascadio_result, validate=True)
-            with open(output_glb, "wb") as f:
-                f.write(raw)
-            return
-        except Exception:
-            # Not base64; maybe it's a path that cascadio created
-            if os.path.exists(cascadio_result):
-                # Copy to expected location
-                shutil.copy2(cascadio_result, output_glb)
-                return
-            raise RuntimeError("cascadio.step_to_glb returned a string that is neither base64 nor an existing file path.")
-
-    raise RuntimeError("Unexpected return from cascadio.step_to_glb; cannot persist GLB.")
-
-# -----------------------
-# Drive download (no prints/returns)
-# -----------------------
-def Download_Step(Drive_Link: str, Output_Name: str = None, stl_path: str = None, zip_path: str = None):
     root_dir = "/content"
-    base = derive_output_base(stl_path=stl_path, zip_path=zip_path, fallback=Output_Name)
-    out_dir = ensure_output_dir(base, root_dir=root_dir)
-
-    file_id = Drive_Link.split('/d/')[1].split('/')[0]
+    file_id = Drive_Link.split('/d/')[1].split('/')[0]  # Extract ID from full link
     url = f"https://drive.google.com/uc?id={file_id}"
-
-    output_step = os.path.join(out_dir, base + ".step")
+    output_step = os.path.join(root_dir, Output_Name + ".step")
     gdown.download(url, output_step, quiet=True)
 
-    copy_stl_into_folder(stl_path, out_dir)
+def Step_3D_Render(Step_Name):
+    # function body
+    #pass
+    #file_id = Drive_Link
+    #url = f"https://drive.google.com/uc?id={file_id}"
+    
+    output_Step = Step_Name+".step"
+    output_glb = Step_Name+".glb"
+    output_glb_scaled = Step_Name+"_scaled"+".glb"
+    #gdown.download(url, output_Step, quiet=True)
 
-# -----------------------
-# STEP -> GLB -> HTML viewer (no prints/returns)
-# -----------------------
-def Step_3D_Render(Step_Name: str, stl_path: str = None, zip_path: str = None, target_size: float = 2.0):
-    root_dir = "/content"
-    base = derive_output_base(stl_path=stl_path, zip_path=zip_path, fallback=Step_Name)
-    out_dir = ensure_output_dir(base, root_dir=root_dir)
+    # Convert STEP to GLB
+    glb_base64 = cascadio.step_to_glb(output_Step, output_glb)
 
-    output_step = os.path.join(out_dir, base + ".step")
-    output_glb = os.path.join(out_dir, base + ".glb")
-    output_glb_scaled = os.path.join(out_dir, base + "_scaled.glb")
-    html_name = os.path.join(out_dir, base + "_viewer.html")
-
-    # If user passed a direct path, honor it; else expect /content/<BASE>/<BASE>.step
-    if os.path.isabs(Step_Name) or os.path.exists(Step_Name):
-        output_step = Step_Name
-    else:
-        if not os.path.exists(output_step):
-            raise FileNotFoundError(
-                f"STEP not found at expected path: {output_step}. "
-                f"Run Download_Step(...) first or pass a direct STEP path to Step_3D_Render."
-            )
-
-    copy_stl_into_folder(stl_path, out_dir)
-
-    # Convert STEP -> GLB and ensure the file exists
-    cascadio_result = cascadio.step_to_glb(output_step, output_glb)
-    _persist_glb(cascadio_result, output_glb)
-    if not os.path.exists(output_glb):
-        raise RuntimeError(f"Failed to create GLB at: {output_glb}")
-
-    # Load and scale
+    # Load and scale the mesh
     mesh = trimesh.load(output_glb)
-    current_size = float(max(mesh.extents)) if hasattr(mesh, "extents") else None
-    if not current_size or current_size == 0:
-        raise ValueError("Could not determine mesh size from GLB for scaling.")
-    scale_factor = float(target_size) / current_size
+        
+    TARGET_SIZE = 2  # Set your desired mesh size
+    current_size = max(mesh.extents)
+    scale_factor = TARGET_SIZE / current_size
     mesh.apply_scale(scale_factor)
     mesh.export(output_glb_scaled)
+    
+    # Properly encode the final GLB as base64
+    with open(output_glb_scaled, "rb") as glb_file:
+        glb_bytes = glb_file.read()
+        glb_base64 = base64.b64encode(glb_bytes).decode("utf-8")
 
-    # Inline viewer
-    with open(output_glb_scaled, "rb") as f:
-        glb_base64 = base64.b64encode(f.read()).decode("utf-8")
-
+    # Step 3: Create the HTML viewer
     html_content = f"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<title>{base} — 3D Viewer</title>
-<style>
-  html, body {{ margin:0; height:100%; overflow:hidden; background:#f0f0f0; }}
-  #app {{ width:100%; height:100%; }}
-  canvas {{ display:block; }}
-</style>
-</head>
-<body>
-<div id="app"></div>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Sketch.glb 3D Viewer</title>
+        <style>
+            body {{ margin: 0; overflow: hidden; }}
+            canvas {{ display: block; }}
+        </style>
+    </head>
+    <body>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+        <script>
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
-<script>
-const container = document.getElementById('app');
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.01, 1000);
+            camera.position.set(0, 0, 3);
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf0f0f0);
+            const renderer = new THREE.WebGLRenderer({{ antialias: true }});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
-camera.position.set(0, 0, 3);
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
 
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-container.appendChild(renderer.domElement);
+            // Lights
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(2, 2, 2);
+            scene.add(dirLight);
 
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
+            // Load GLB from Base64
+            function base64ToArrayBuffer(base64) {{
+                const binary_string = window.atob(base64);
+                const len = binary_string.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {{
+                    bytes[i] = binary_string.charCodeAt(i);
+                }}
+                return bytes.buffer;
+            }}
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-dirLight.position.set(2, 2, 2);
-scene.add(dirLight);
+            const glbBase64 = "{glb_base64}";
+            const arrayBuffer = base64ToArrayBuffer(glbBase64);
 
-function base64ToArrayBuffer(base64) {{
-  const binary = atob(base64);
-  const len = binary.length;
-  const bytes = new Uint8Array(len);
-  for (let i=0; i<len; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes.buffer;
-}}
+            const loader = new THREE.GLTFLoader();
+            loader.parse(arrayBuffer, '', function (gltf) {{
+                const model = gltf.scene;
+                // Make materials double-sided
+                model.traverse(function (node) {{
+                    if (node.isMesh && node.material) {{
+                        if (Array.isArray(node.material)) {{
+                            node.material.forEach(mat => mat.side = THREE.DoubleSide);
+                        }} else {{
+                            node.material.side = THREE.DoubleSide;
+                        }}
+                    }}
+                }});
+                scene.add(model);
 
-const glbBase64 = "{glb_base64}";
-const arrayBuffer = base64ToArrayBuffer(glbBase64);
+                // Center the model
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center);
+            }}, function (error) {{
+                console.error('Error loading GLB:', error);
+            }});
 
-const loader = new THREE.GLTFLoader();
-loader.parse(arrayBuffer, '', (gltf) => {{
-  const model = gltf.scene;
-  model.traverse(n => {{
-    if (n.isMesh && n.material) {{
-      if (Array.isArray(n.material)) n.material.forEach(m => m.side = THREE.DoubleSide);
-      else n.material.side = THREE.DoubleSide;
-    }}
-  }});
-  scene.add(model);
+            function animate() {{
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }}
+            animate();
 
-  const box = new THREE.Box3().setFromObject(model);
-  const center = box.getCenter(new THREE.Vector3());
-  model.position.sub(center);
-}}, (err) => console.error('Error parsing GLB:', err));
+            window.addEventListener('resize', () => {{
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }});
+        </script>
+    </body>
+    </html>
+    """
 
-function animate() {{
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}}
-animate();
+    from IPython.display import HTML
 
-window.addEventListener('resize', () => {{
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}});
-</script>
-</body>
-</html>
-"""
-    with open(html_name, "w", encoding="utf-8") as f:
-        f.write(html_content)
+    html_name = output_Step + "_scaled" + ".html"
 
-    display(HTML(html_content))
+    # Save HTML file (write mode)
+    with open(html_name, "w") as f:
+        f.write(html_content)  # Make sure you're writing the actual HTML content here
 
+    # If you really need to read it back (though this is usually unnecessary)
+    with open(html_name, "r") as f:
+        html = f.read()
+    
+    display(HTML(html))
+
+
+#with open("Sketch_3D_Viewer.html", "r") as f:
+#    html_content = f.read()
