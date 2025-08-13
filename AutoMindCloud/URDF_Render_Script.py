@@ -4,47 +4,37 @@ import gdown, zipfile, shutil
 
 def Download_URDF(Drive_Link, Output_Name="Model"):
     """
-    Downloads a ZIP file from Google Drive, names it Output_Name.zip,
-    and extracts it into a folder named Output_Name inside /content.
-    Returns the extracted folder path.
+    Downloads a ZIP from Google Drive and extracts to /content/Output_Name
     """
-    root_dir = "/content"  # Always fixed
+    root_dir = "/content"
     file_id = Drive_Link.split('/d/')[1].split('/')[0]
     download_url = f'https://drive.google.com/uc?id={file_id}'
     zip_path = os.path.join(root_dir, Output_Name + ".zip")
     tmp_extract = os.path.join(root_dir, f"__tmp_extract_{Output_Name}")
     final_dir = os.path.join(root_dir, Output_Name)
 
-    # Clean old data
-    if os.path.exists(tmp_extract):
-        shutil.rmtree(tmp_extract)
+    if os.path.exists(tmp_extract): shutil.rmtree(tmp_extract)
     os.makedirs(tmp_extract, exist_ok=True)
-    if os.path.exists(final_dir):
-        shutil.rmtree(final_dir)
+    if os.path.exists(final_dir): shutil.rmtree(final_dir)
 
-    # Download ZIP
     gdown.download(download_url, zip_path, quiet=True)
 
-    # Extract
     with zipfile.ZipFile(zip_path, 'r') as zf:
         zf.extractall(tmp_extract)
 
-    # Move/rename folder
-    def is_junk(name):
-        return name.startswith('.') or name == '__MACOSX'
-
-    top_items = [n for n in os.listdir(tmp_extract) if not is_junk(n)]
-    if len(top_items) == 1 and os.path.isdir(os.path.join(tmp_extract, top_items[0])):
-        shutil.move(os.path.join(tmp_extract, top_items[0]), final_dir)
+    def is_junk(n): return n.startswith('.') or n == '__MACOSX'
+    top = [n for n in os.listdir(tmp_extract) if not is_junk(n)]
+    if len(top)==1 and os.path.isdir(os.path.join(tmp_extract, top[0])):
+        shutil.move(os.path.join(tmp_extract, top[0]), final_dir)
     else:
         os.makedirs(final_dir, exist_ok=True)
-        for n in top_items:
-            shutil.move(os.path.join(tmp_extract, n), os.path.join(final_dir, n))
+        for n in top: shutil.move(os.path.join(tmp_extract, n), os.path.join(final_dir, n))
 
     shutil.rmtree(tmp_extract, ignore_errors=True)
+    return final_dir
 
 def URDF_Render(folder_path: str = "model"):
-    # --- resolve folders (supports model/ and model/model/) ---
+    # --- locate urdf/ and meshes/ (one level deep allowed) ---
     def find_dirs(root):
         d_u, d_m = os.path.join(root,"urdf"), os.path.join(root,"meshes")
         if os.path.isdir(d_u) and os.path.isdir(d_m): return d_u, d_m
@@ -70,11 +60,11 @@ def URDF_Render(folder_path: str = "model"):
     def esc_js(s: str) -> str:
         return (s.replace('\\','\\\\').replace('`','\\`').replace('$','\\$').replace("</script>","<\\/script>"))
 
-    # collect referenced meshes
+    # collect mesh refs
     mesh_refs = re.findall(r'filename="([^"]+\.(?:stl|dae))"', urdf_raw, re.IGNORECASE)
     mesh_refs = list(dict.fromkeys(mesh_refs))
 
-    # index files
+    # index files on disk
     disk_files = []
     for root, _, files in os.walk(meshes_dir):
         for name in files:
@@ -94,6 +84,7 @@ def URDF_Render(folder_path: str = "model"):
         k = key.replace("\\","/").lower()
         if k not in mesh_db: mesh_db[k] = b64(path)
 
+    # map URDF refs to files
     for ref in mesh_refs:
         base = os.path.basename(ref).lower()
         if base in by_basename:
@@ -102,42 +93,36 @@ def URDF_Render(folder_path: str = "model"):
             add_entry(ref.replace("package://",""), real)
             add_entry(base, real)
 
+    # include textures by basename
     for p in disk_files:
         bn = os.path.basename(p).lower()
         if bn.endswith((".png",".jpg",".jpeg")) and bn not in mesh_db:
             add_entry(bn, p)
 
-    # HTML with centered "box" viewer (no borders/radius/shadow) + image badge bottom-right
+    # === Full-screen HTML (only badge overlay) ===
     html = r"""<!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <title>URDF Viewer</title>
 <style>
-  :root { --bg:#f5f6fa; --card:#fff; }
-  html,body{height:100%;margin:0;background:var(--bg);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
-  #wrap{display:flex;align-items:center;justify-content:center;height:100%;padding:16px;box-sizing:border-box}
-  /* centered box, no custom borders/radius/shadow */
-  #viewer{position:relative;width:min(1200px,95vw);height:min(80vh,820px);background:var(--card);overflow:hidden}
+  html,body { margin:0; height:100%; overflow:hidden; background:#f0f0f0; }
+  canvas { display:block; width:100vw; height:100vh; }
   .badge{
-      position:absolute;
+      position:fixed;
       right:14px;
       bottom:12px;
+      z-index:10;
       user-select:none;
       pointer-events:none;
   }
-  .badge img{
-      max-height:40px;
-      display:block;
-  }
+  .badge img{ max-height:40px; display:block; }
 </style>
 </head>
 <body>
-<div id="wrap"><div id="viewer">
   <div class="badge">
     <img src="https://i.gyazo.com/30a9ecbd8f1a0483a7e07a10eaaa8522.png" alt="badge"/>
   </div>
-</div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
@@ -156,31 +141,34 @@ def URDF_Render(folder_path: str = "model"):
   const meshDB = /*__MESH_DB__*/ {};
   const urdfContent = `/*__URDF_CONTENT__*/`;
 
-  const container = document.getElementById('viewer');
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xffffff);
+  scene.background = new THREE.Color(0xf0f0f0);
 
-  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.001, 10000);
-  camera.position.set(2.2, 2.0, 2.2);
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10000);
+  camera.position.set(0, 0, 3);
 
   const renderer = new THREE.WebGLRenderer({ antialias:true });
   renderer.setPixelRatio(window.devicePixelRatio || 1);
-  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.domElement.style.touchAction = 'none';
-  container.appendChild(renderer.domElement);
+  document.body.appendChild(renderer.domElement);
 
   const controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
 
+  // lighting
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  dirLight.position.set(2, 2, 2);
+  scene.add(dirLight);
+
   function onResize(){
-    const w = container.clientWidth, h = container.clientHeight;
-    camera.aspect = w/h; camera.updateProjectionMatrix();
-    renderer.setSize(w,h);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
   }
   window.addEventListener('resize', onResize);
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.9));
 
   // ---- URDF + mesh resolvers (scoped) ----
   const urdfLoader = new URDFLoader();
@@ -201,11 +189,37 @@ def URDF_Render(folder_path: str = "model"):
   const daeCache = new Map();
   let pendingMeshes = 0, fitTimer = null;
 
+  function applyDoubleSided(obj){
+    obj?.traverse?.(node=>{
+      if (node.isMesh){
+        if (Array.isArray(node.material)) node.material.forEach(m=>m.side=THREE.DoubleSide);
+        else if (node.material) node.material.side = THREE.DoubleSide;
+        node.castShadow = node.receiveShadow = true;
+        node.geometry?.computeVertexNormals?.();
+      }
+    });
+  }
+
   function scheduleFit(){
     if (fitTimer) clearTimeout(fitTimer);
     fitTimer = setTimeout(() => {
       if (pendingMeshes === 0 && api.robotModel) fitAndCenter(api.robotModel);
     }, 80);
+  }
+
+  // --- preserve good centering/fit behavior ---
+  function fitAndCenter(object){
+    const box = new THREE.Box3().setFromObject(object);
+    if (box.isEmpty()) return;
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const dist = maxDim * 1.8;               // same feel as previous version
+    camera.near = Math.max(maxDim/1000, 0.001);
+    camera.far  = Math.max(maxDim*1000, 1000);
+    camera.updateProjectionMatrix();
+    camera.position.copy(center.clone().add(new THREE.Vector3(dist, dist*0.9, dist)));
+    controls.target.copy(center); controls.update();
   }
 
   urdfLoader.loadMeshCb = (path, manager, onComplete) => {
@@ -216,18 +230,7 @@ def URDF_Render(folder_path: str = "model"):
 
     pendingMeshes++;
     const done = (mesh) => {
-      try{
-        mesh?.traverse?.(o=>{
-          if (o.isMesh){
-            if (!o.material || !o.material.isMaterial){
-              o.material = new THREE.MeshStandardMaterial({ color: 0xcccccc });
-            }
-            o.material.transparent = false; o.material.opacity = 1.0;
-            o.castShadow = o.receiveShadow = true;
-            o.geometry?.computeVertexNormals?.();
-          }
-        });
-      }catch(e){}
+      applyDoubleSided(mesh);
       onComplete(mesh);
       pendingMeshes--; scheduleFit();
     };
@@ -239,7 +242,10 @@ def URDF_Render(folder_path: str = "model"):
         const loader = new THREE.STLLoader();
         const geom = loader.parse(bytes.buffer);
         geom.computeVertexNormals();
-        done(new THREE.Mesh(geom, new THREE.MeshStandardMaterial({ color: 0x8aa1ff, roughness: 0.85, metalness: 0.15, side: THREE.DoubleSide })));
+        done(new THREE.Mesh(
+          geom,
+          new THREE.MeshStandardMaterial({ color: 0x8aa1ff, roughness: 0.85, metalness: 0.15, side: THREE.DoubleSide })
+        ));
         return;
       }
       if (ext === 'dae'){
@@ -268,8 +274,10 @@ def URDF_Render(folder_path: str = "model"):
     }catch(e){ done(new THREE.Mesh()); }
   };
 
-  // scoped state
+  // ---- Hover highlight + joint drag ----
   const api = { scene, camera, renderer, controls, robotModel:null, linkSet:null, linkToJoint:null };
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
 
   function buildLinkMaps(robot){
     api.linkSet = new Set(Object.values(robot.links || {}));
@@ -282,21 +290,6 @@ def URDF_Render(folder_path: str = "model"):
     });
   }
 
-  function fitAndCenter(object){
-    const bbox = new THREE.Box3().setFromObject(object);
-    if (bbox.isEmpty()) return;
-    const center = bbox.getCenter(new THREE.Vector3());
-    const size = bbox.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    camera.near = Math.max(maxDim/1000, 0.001);
-    camera.far  = Math.max(maxDim*1000, 1000);
-    camera.updateProjectionMatrix();
-    const dist = maxDim * 1.8;
-    camera.position.copy(center.clone().add(new THREE.Vector3(dist, dist*0.9, dist)));
-    controls.target.copy(center); controls.update();
-  }
-
-  // hover + joint drag
   const hoverState = { link:null, overlays:[] };
   function clearHover(){ hoverState.overlays.forEach(o=>{ o.parent&&o.parent.remove(o);}); hoverState.overlays.length=0; hoverState.link=null; }
   function showHover(link){
@@ -311,7 +304,6 @@ def URDF_Render(folder_path: str = "model"):
     });
   }
 
-  const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
   let dragState = null, currentHoverJoint = null;
 
   function getPointer(e){
@@ -486,5 +478,5 @@ def URDF_Render(folder_path: str = "model"):
 
     html = html.replace("/*__MESH_DB__*/ {}", json.dumps(mesh_db))
     html = html.replace("/*__URDF_CONTENT__*/", esc_js(urdf_raw))
-    
     return HTML(html)
+
