@@ -2,10 +2,8 @@ import base64, re, os, json
 from IPython.display import HTML
 import gdown, zipfile, shutil
 
+# Download & extract a Drive ZIP into /content/Output_Name
 def Download_URDF(Drive_Link, Output_Name="Model"):
-    """
-    Downloads a ZIP from Google Drive and extracts to /content/Output_Name
-    """
     root_dir = "/content"
     file_id = Drive_Link.split('/d/')[1].split('/')[0]
     download_url = f'https://drive.google.com/uc?id={file_id}'
@@ -18,7 +16,6 @@ def Download_URDF(Drive_Link, Output_Name="Model"):
     if os.path.exists(final_dir): shutil.rmtree(final_dir)
 
     gdown.download(download_url, zip_path, quiet=True)
-
     with zipfile.ZipFile(zip_path, 'r') as zf:
         zf.extractall(tmp_extract)
 
@@ -29,10 +26,10 @@ def Download_URDF(Drive_Link, Output_Name="Model"):
     else:
         os.makedirs(final_dir, exist_ok=True)
         for n in top: shutil.move(os.path.join(tmp_extract, n), os.path.join(final_dir, n))
-
     shutil.rmtree(tmp_extract, ignore_errors=True)
 
-def URDF_Render(folder_path: str = "model"):
+# Viewer with robust selection + joint rotation (revolute/continuous/prismatic)
+def URDF_Render(folder_path: str = "Model"):
     # --- locate urdf/ and meshes/ (one level deep allowed) ---
     def find_dirs(root):
         d_u, d_m = os.path.join(root,"urdf"), os.path.join(root,"meshes")
@@ -57,13 +54,16 @@ def URDF_Render(folder_path: str = "model"):
         urdf_raw = f.read()
 
     def esc_js(s: str) -> str:
-        return (s.replace('\\','\\\\').replace('`','\\`').replace('$','\\$').replace("</script>","<\\/script>"))
+        return (s.replace('\\','\\\\')
+                 .replace('`','\\`')
+                 .replace('$','\\$')
+                 .replace("</script>","<\\/script>"))
 
-    # collect mesh refs
+    # collect mesh refs from URDF
     mesh_refs = re.findall(r'filename="([^"]+\.(?:stl|dae))"', urdf_raw, re.IGNORECASE)
     mesh_refs = list(dict.fromkeys(mesh_refs))
 
-    # index files on disk
+    # index actual files on disk
     disk_files = []
     for root, _, files in os.walk(meshes_dir):
         for name in files:
@@ -98,7 +98,7 @@ def URDF_Render(folder_path: str = "model"):
         if bn.endswith((".png",".jpg",".jpeg")) and bn not in mesh_db:
             add_entry(bn, p)
 
-    # === Full-screen HTML (only badge overlay) with axis rectification ===
+    # === Full-screen HTML (badge only) ===
     html = r"""<!doctype html>
 <html lang="en">
 <head>
@@ -131,7 +131,9 @@ def URDF_Render(folder_path: str = "model"):
 
 <script>
 (() => {
-  // Clean previous viewer safely
+  const SELECT_MODE = 'link'; // 'link' agrupa toda la pieza conectada
+
+  // Limpia instancias previas si re-ejecutas la celda
   if (window.__URDF_VIEWER__ && typeof window.__URDF_VIEWER__.destroy === 'function') {
     try { window.__URDF_VIEWER__.destroy(); } catch(e){}
     try { delete window.__URDF_VIEWER__; } catch(e){}
@@ -156,7 +158,7 @@ def URDF_Render(folder_path: str = "model"):
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
 
-  // lighting
+  // Iluminación
   scene.add(new THREE.AmbientLight(0xffffff, 0.6));
   const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
   dirLight.position.set(2, 2, 2);
@@ -169,7 +171,7 @@ def URDF_Render(folder_path: str = "model"):
   }
   window.addEventListener('resize', onResize);
 
-  // ---- URDF + mesh resolvers (scoped) ----
+  // --- loader helpers ---
   const urdfLoader = new URDFLoader();
   const textDecoder = new TextDecoder();
   const b64ToUint8 = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
@@ -190,11 +192,11 @@ def URDF_Render(folder_path: str = "model"):
 
   function applyDoubleSided(obj){
     obj?.traverse?.(node=>{
-      if (node.isMesh){
+      if (node.isMesh && node.geometry){
         if (Array.isArray(node.material)) node.material.forEach(m=>m.side=THREE.DoubleSide);
         else if (node.material) node.material.side = THREE.DoubleSide;
         node.castShadow = node.receiveShadow = true;
-        node.geometry?.computeVertexNormals?.();
+        node.geometry.computeVertexNormals?.();
       }
     });
   }
@@ -203,20 +205,19 @@ def URDF_Render(folder_path: str = "model"):
     if (fitTimer) clearTimeout(fitTimer);
     fitTimer = setTimeout(() => {
       if (pendingMeshes === 0 && api.robotModel) {
-        rectifyUpForward(api.robotModel);   // <-- ensure symmetric, upright
-        fitAndCenter(api.robotModel);       // preserve previous centering feel
+        rectifyUpForward(api.robotModel);
+        fitAndCenter(api.robotModel);
       }
     }, 80);
   }
 
-  // --- preserve good centering/fit behavior ---
   function fitAndCenter(object){
     const box = new THREE.Box3().setFromObject(object);
     if (box.isEmpty()) return;
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    const dist = maxDim * 1.8;               // same feel as previous version
+    const dist = maxDim * 1.8;
     camera.near = Math.max(maxDim/1000, 0.001);
     camera.far  = Math.max(maxDim*1000, 1000);
     camera.updateProjectionMatrix();
@@ -224,16 +225,15 @@ def URDF_Render(folder_path: str = "model"):
     controls.target.copy(center); controls.update();
   }
 
-  // --- rectify URDF (ROS Z-up, X-forward) to Three.js (Y-up, Z-forward) ---
+  // Z-up (ROS) -> Y-up (Three)
   function rectifyUpForward(obj){
-    // If already rectified once, skip
     if (obj.userData.__rectified) return;
-    // Rotate -90° about X to convert Z-up -> Y-up
     obj.rotateX(-Math.PI/2);
     obj.userData.__rectified = true;
     obj.updateMatrixWorld(true);
   }
 
+  // Cargador de mallas desde el diccionario embebido
   urdfLoader.loadMeshCb = (path, manager, onComplete) => {
     const tries = variantsFor(path);
     let keyFound = null;
@@ -286,37 +286,55 @@ def URDF_Render(folder_path: str = "model"):
     }catch(e){ done(new THREE.Mesh()); }
   };
 
-  // ---- Hover highlight + joint drag ----
-  const api = { scene, camera, renderer, controls, robotModel:null, linkSet:null, linkToJoint:null };
+  // =========================
+  // Selección + rotación de joints (robusto)
+  // =========================
+  const api = { scene, camera, renderer, controls, robotModel:null, linkSet:null };
+
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
+  let dragState = null;
 
-  function buildLinkMaps(robot){
-    api.linkSet = new Set(Object.values(robot.links || {}));
-    api.linkToJoint = new Map();
-    Object.values(robot.joints || {}).forEach(j=>{
-      let childLink = null;
-      if ('child' in j && robot.links && robot.links[j.child]) childLink = robot.links[j.child];
-      else for (const c of j.children) if (api.linkSet.has(c)) { childLink = c; break; }
-      if (childLink) api.linkToJoint.set(childLink, j);
-    });
+  const jt = s => (s||'').toString().toLowerCase();
+  const isMovable   = j => { const t = jt(j.jointType); return t && t !== 'fixed'; };
+  const isPrismatic = j => jt(j.jointType) === 'prismatic';
+
+  // Overlay de hover sin parpadeo
+  const hoverState = { overlays: [] };
+  function clearHover() { for (const o of hoverState.overlays) if (o?.parent) o.parent.remove(o); hoverState.overlays.length = 0; }
+  function makeOverlayForMesh(meshObj) {
+    if (!meshObj || !meshObj.isMesh || !meshObj.geometry) return null;
+    const overlay = new THREE.Mesh(
+      meshObj.geometry,
+      new THREE.MeshBasicMaterial({ color:0x9e9e9e, transparent:true, opacity:0.35, depthTest:false, depthWrite:false })
+    );
+    overlay.renderOrder = 999;
+    overlay.userData.__isHoverOverlay = true;
+    return overlay;
   }
-
-  const hoverState = { link:null, overlays:[] };
-  function clearHover(){ hoverState.overlays.forEach(o=>{ o.parent&&o.parent.remove(o);}); hoverState.overlays.length=0; hoverState.link=null; }
-  function showHover(link){
-    if (hoverState.link===link) return;
-    clearHover(); hoverState.link=link;
-    link.traverse(o=>{
-      if (o.isMesh && !o.userData.__hoverOverlay){
-        const overlay = new THREE.Mesh(o.geometry, new THREE.MeshBasicMaterial({ color:0x9e9e9e, transparent:true, opacity:0.35, depthTest:false, depthWrite:false }));
-        overlay.renderOrder=999; overlay.scale.set(1.03,1.03,1.03); overlay.userData.__hoverOverlay=true;
-        o.add(overlay); hoverState.overlays.push(overlay);
-      }
-    });
+  function collectMeshesInLink(linkObj) {
+    const targets = [];
+    const stack = [linkObj];
+    while (stack.length) {
+      const n = stack.pop();
+      if (!n) continue;
+      if (n.isMesh && n.geometry && !n.userData.__isHoverOverlay) targets.push(n);
+      const kids = n.children ? n.children.slice() : [];
+      for (let i = 0; i < kids.length; i++) stack.push(kids[i]);
+    }
+    return targets;
   }
-
-  let dragState = null, currentHoverJoint = null;
+  function showHoverMesh(meshObj) {
+    const ov = makeOverlayForMesh(meshObj);
+    if (ov) { meshObj.add(ov); hoverState.overlays.push(ov); }
+  }
+  function showHoverLink(linkObj) {
+    const meshes = collectMeshesInLink(linkObj);
+    for (const m of meshes) {
+      const ov = makeOverlayForMesh(m);
+      if (ov) { m.add(ov); hoverState.overlays.push(ov); }
+    }
+  }
 
   function getPointer(e){
     const r = renderer.domElement.getBoundingClientRect();
@@ -324,137 +342,222 @@ def URDF_Render(folder_path: str = "model"):
     pointer.y = -((e.clientY - r.top)/r.height)*2+1;
   }
 
-  function clampByLimits(val, joint, type){
-    const lim = joint.limit || joint.limits || {};
-    if (type !== 'continuous'){
+  // Nearest ancestor with jointType OR link tagged with __joint
+  function findAncestorJoint(o){
+    let n = o;
+    while (n){
+      if (n.jointType && isMovable(n)) return n;
+      if (n.userData && n.userData.__joint && isMovable(n.userData.__joint)) return n.userData.__joint;
+      n = n.parent;
+    }
+    return null;
+  }
+  function findAncestorLink(o){
+    while (o){
+      if (api.linkSet && api.linkSet.has(o)) return o;
+      o = o.parent;
+    }
+    return null;
+  }
+
+  function clampByLimits(val, joint){
+    const lim = joint.limit || {};
+    if (jt(joint.jointType) !== 'continuous'){
       if (typeof lim.lower === 'number') val = Math.max(val, lim.lower);
       if (typeof lim.upper === 'number') val = Math.min(val, lim.upper);
     }
     return val;
   }
-
-  function applyJointValue(joint, type, val){
-    val = clampByLimits(val, joint, type);
-    if (api.robotModel?.setJointValue && joint.name) api.robotModel.setJointValue(joint.name, val);
-    else if (joint.setJointValue) joint.setJointValue(val);
-    else { if (type==='prismatic') joint.position=val; else joint.angle=val; }
+  function getJointValue(j){
+    if (isPrismatic(j)) return (typeof j.position === 'number') ? j.position : 0;
+    return (typeof j.angle === 'number') ? j.angle : 0;
+  }
+  function setJointValue(j, v){
+    v = clampByLimits(v, j);
+    if (typeof j.setJointValue === 'function') j.setJointValue(v);
+    else if (api.robotModel && j.name) api.robotModel.setJointValue(j.name, v);
     api.robotModel?.updateMatrixWorld(true);
   }
 
-  function startJointDrag(joint, ev){
-    const type = joint.jointType || joint.type || 'revolute';
-    const originW = joint.getWorldPosition(new THREE.Vector3());
-    const qWorld = joint.getWorldQuaternion(new THREE.Quaternion());
-    const axisW  = (joint.axis || new THREE.Vector3(1,0,0)).clone().normalize().applyQuaternion(qWorld).normalize();
-    const startVal = (type==='prismatic') ? (joint.position||0) : (joint.angle||0);
+  // Drag state + fallback
+  const ROT_PER_PIXEL = 0.01;    // rad / pixel
+  const PRISM_PER_PIXEL = 0.003; // m / pixel
 
-    let rotPlane = null, r0 = null;
-    if (type !== 'prismatic'){
-      rotPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(axisW, originW);
-      raycaster.setFromCamera(pointer, camera);
-      const p0 = new THREE.Vector3();
-      const ok = raycaster.ray.intersectPlane(rotPlane, p0);
-      r0 = ok ? p0.clone().sub(originW) : null;
-      if (!r0 || r0.lengthSq()<1e-12){
-        r0 = new THREE.Vector3().crossVectors(axisW, new THREE.Vector3(1,0,0));
-        if (r0.lengthSq()<1e-8) r0 = new THREE.Vector3().crossVectors(axisW, new THREE.Vector3(0,1,0));
-      }
-      r0.normalize();
+  function startJointDrag(joint, ev){
+    const originW = joint.getWorldPosition(new THREE.Vector3());
+    const qWorld  = joint.getWorldQuaternion(new THREE.Quaternion());
+    const axisW   = (joint.axis || new THREE.Vector3(1,0,0)).clone().normalize().applyQuaternion(qWorld).normalize();
+
+    // Plane perpendicular to axis (works for both; for revolute used to define arc)
+    const dragPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(axisW.clone(), originW);
+
+    // Seed vector for revolute arc
+    raycaster.setFromCamera(pointer, camera);
+    const p0 = new THREE.Vector3();
+    let r0 = null;
+    if (raycaster.ray.intersectPlane(dragPlane, p0)){
+      r0 = p0.clone().sub(originW);
+      if (r0.lengthSq() > 1e-12) r0.normalize(); else r0 = null;
     }
 
-    dragState = { joint, type, originW, axisW, rotPlane, r0, value:startVal };
+    dragState = {
+      joint, originW, axisW, dragPlane, r0,
+      value: getJointValue(joint),
+      lastClientX: ev.clientX, lastClientY: ev.clientY
+    };
     controls.enabled = false;
     renderer.domElement.style.cursor = 'grabbing';
     renderer.domElement.setPointerCapture?.(ev.pointerId);
   }
 
   function updateJointDrag(ev){
-    const { joint, type, originW, axisW } = dragState;
+    const ds = dragState;
     const fine = ev.shiftKey ? 0.35 : 1.0;
 
-    if (type === 'prismatic'){
-      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(axisW, originW);
-      raycaster.setFromCamera(pointer, camera);
-      const p = new THREE.Vector3();
-      raycaster.ray.intersectPlane(plane, p);
-      const t1 = p.clone().sub(originW).dot(axisW);
-      const delta = (t1 - (dragState.lastT ?? t1)) * fine;
-      dragState.value += delta; dragState.lastT = t1;
-      applyJointValue(joint, type, dragState.value);
-      return;
-    }
-
+    getPointer(ev);
     raycaster.setFromCamera(pointer, camera);
-    const p = new THREE.Vector3();
-    const hit = raycaster.ray.intersectPlane(dragState.rotPlane, p);
-    if (!hit){
-      const deltaRad = (ev.movementX||0) * 0.01 * fine;
-      dragState.value += deltaRad; applyJointValue(joint, type, dragState.value);
+
+    const dX = (ev.clientX - (ds.lastClientX ?? ev.clientX));
+    const dY = (ev.clientY - (ds.lastClientY ?? ev.clientY));
+    ds.lastClientX = ev.clientX; ds.lastClientY = ev.clientY;
+
+    if (isPrismatic(ds.joint)){
+      const hit = new THREE.Vector3();
+      let delta = 0;
+      if (raycaster.ray.intersectPlane(ds.dragPlane, hit)){
+        const t1 = hit.clone().sub(ds.originW).dot(ds.axisW);
+        delta = (t1 - (ds.lastT ?? t1)); ds.lastT = t1;
+      } else {
+        delta = - (dY * PRISM_PER_PIXEL);
+      }
+      ds.value += delta * fine;
+      setJointValue(ds.joint, ds.value);
       return;
     }
-    let r1 = p.clone().sub(originW);
-    if (r1.lengthSq()<1e-12) return;
-    r1.normalize();
 
-    const cross = new THREE.Vector3().crossVectors(dragState.r0, r1);
-    const dot = THREE.Math.clamp(dragState.r0.dot(r1), -1, 1);
-    const sign = Math.sign(axisW.dot(cross)) || 1;
-    const delta = Math.atan2(cross.length(), dot) * sign * fine;
-
-    dragState.value += delta; dragState.r0 = r1;
-    applyJointValue(joint, type, dragState.value);
+    // Revolute / Continuous
+    let applied = false;
+    const hit = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(ds.dragPlane, hit)){
+      let r1 = hit.clone().sub(ds.originW);
+      if (r1.lengthSq() >= 1e-12){
+        r1.normalize();
+        if (!ds.r0) ds.r0 = r1.clone();
+        const cross = new THREE.Vector3().crossVectors(ds.r0, r1);
+        const dot = THREE.MathUtils.clamp(ds.r0.dot(r1), -1, 1);
+        const sign = Math.sign(ds.axisW.dot(cross)) || 1;
+        const delta = Math.atan2(cross.length(), dot) * sign;
+        ds.value += (delta * fine);
+        ds.r0 = r1;
+        setJointValue(ds.joint, ds.value);
+        applied = true;
+      }
+    }
+    if (!applied){
+      const delta = (dX * ROT_PER_PIXEL) * fine;
+      ds.value += delta;
+      setJointValue(ds.joint, ds.value);
+    }
   }
 
   function endJointDrag(ev){
     if (dragState){
       renderer.domElement.releasePointerCapture?.(ev.pointerId);
-      dragState = null;
     }
+    dragState = null;
     controls.enabled = true;
     renderer.domElement.style.cursor = 'auto';
   }
 
+  // --------- Eventos de puntero ----------
   renderer.domElement.addEventListener('pointermove', (e)=>{
     getPointer(e);
+    if (dragState) { updateJointDrag(e); return; }
+    if (!api.robotModel) return;
 
-    if (!dragState && api.robotModel){
-      raycaster.setFromCamera(pointer, camera);
-      const meshes=[]; api.robotModel.traverse(o=>{ if(o.isMesh && !o.userData.__hoverOverlay) meshes.push(o);});
-      const hits = raycaster.intersectObjects(meshes,true);
+    raycaster.setFromCamera(pointer, camera);
+    const pickables = [];
+    api.robotModel.traverse(o => { if (o.isMesh && o.geometry && !o.userData.__isHoverOverlay) pickables.push(o); });
 
-      let hoverLink=null, hoverJoint=null;
-      if (hits.length){
-        const findAncestor=(o)=>{while(o){if(api.linkSet && api.linkSet.has(o))return o;o=o.parent;}return null;};
-        const link = findAncestor(hits[0].object);
-        if (link && api.linkToJoint && api.linkToJoint.has(link)){
-          const j = api.linkToJoint.get(link);
-          if (j && (j.jointType||j.type)!=='fixed'){ hoverLink=link; hoverJoint=j; }
-        }
-      }
-      if (hoverLink){ showHover(hoverLink); renderer.domElement.style.cursor='grab'; currentHoverJoint=hoverJoint; }
-      else { clearHover(); renderer.domElement.style.cursor='auto'; currentHoverJoint=null; }
+    const hits = raycaster.intersectObjects(pickables, true);
+
+    clearHover();
+    if (hits.length){
+      const meshHit = hits[0].object;
+      const link = findAncestorLink(meshHit);
+      const joint = findAncestorJoint(meshHit);
+      if (SELECT_MODE === 'link' && link) showHoverLink(link);
+      else showHoverMesh(meshHit);
+      renderer.domElement.style.cursor = (joint && isMovable(joint)) ? 'grab' : 'auto';
+    } else {
+      renderer.domElement.style.cursor = 'auto';
     }
-
-    if (dragState) updateJointDrag(e);
   }, {passive:true});
 
   renderer.domElement.addEventListener('pointerdown', (e)=>{
     e.preventDefault();
-    if (!api.robotModel) return;
-    getPointer(e);
-    if (e.button!==0) return;
-    if (currentHoverJoint && (currentHoverJoint.jointType||currentHoverJoint.type)!=='fixed'){
-      startJointDrag(currentHoverJoint, e);
-    }
+    if (!api.robotModel || e.button!==0) return;
+
+    raycaster.setFromCamera(pointer, camera);
+    const pickables = [];
+    api.robotModel.traverse(o => { if (o.isMesh && o.geometry && !o.userData.__isHoverOverlay) pickables.push(o); });
+    const hits = raycaster.intersectObjects(pickables, true);
+    if (!hits.length) return;
+
+    const joint = findAncestorJoint(hits[0].object);
+    if (joint && isMovable(joint)) startJointDrag(joint, e);
   }, {passive:false});
 
   renderer.domElement.addEventListener('pointerup', endJointDrag);
   renderer.domElement.addEventListener('pointerleave', endJointDrag);
   renderer.domElement.addEventListener('pointercancel', endJointDrag);
 
-  function buildLinkMapsAndFit(){
-    buildLinkMaps(api.robotModel);
-    scheduleFit();
+  // ---------- Carga y mapeo de joints → links (FIX robusto) ----------
+  function markLinksAndJoints(robot){
+    // 1) Set de links para selección por grupo
+    api.linkSet = new Set(Object.values(robot.links || {}));
+
+    // 2) Por cada joint, identificar de forma robusta su link hijo y etiquetarlo
+    const joints = Object.values(robot.joints || {});
+    const linkByName = robot.links || {};
+
+    joints.forEach(j=>{
+      try {
+        j.userData.__isURDFJoint = true;
+
+        // Preferir objeto directo si existe
+        let childLinkObj = j.child && j.child.isObject3D ? j.child : null
+
+        // Si no, intentar por nombre (j.childLink o j.child.name o atributo 'child' string)
+        const childName =
+          (j.childLink && typeof j.childLink === 'string' && j.childLink) ||
+          (j.child && typeof j.child.name === 'string' && j.child.name) ||
+          (typeof j.child === 'string' && j.child) ||
+          (typeof j.child_link === 'string' && j.child_link) ||
+          null;
+
+        if (!childLinkObj && childName && linkByName[childName]) {
+          childLinkObj = linkByName[childName];
+        }
+
+        // Último recurso: buscar descendientes del joint con .name == childName
+        if (!childLinkObj && childName && j.children && j.children.length){
+          const stack = j.children.slice();
+          while (stack.length){
+            const n = stack.pop();
+            if (!n) continue;
+            if (n.name === childName) { childLinkObj = n; break; }
+            const kids = n.children ? n.children.slice() : [];
+            for (let i=0;i<kids.length;i++) stack.push(kids[i]);
+          }
+        }
+
+        // Etiquetar el link hijo con su joint (si es movable)
+        if (childLinkObj && isMovable(j)) {
+          childLinkObj.userData.__joint = j;
+        }
+      } catch(e){}
+    });
   }
 
   function loadURDF(){
@@ -464,27 +567,33 @@ def URDF_Render(folder_path: str = "model"):
       const robot = urdfLoader.parse(urdfContent);
       if (robot?.isObject3D){
         api.robotModel = robot; scene.add(api.robotModel);
-        // Rectify right away so hover/drag & fit use corrected axes:
         rectifyUpForward(api.robotModel);
-        setTimeout(buildLinkMapsAndFit, 30);
+        markLinksAndJoints(api.robotModel);
+        scheduleFit();
       }
     }catch(e){}
   }
 
-  function animate(){ api._raf = requestAnimationFrame(animate); controls.update(); renderer.render(scene,camera); }
+  function animate(){
+    api._raf = requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene,camera);
+  }
   animate();
   loadURDF();
 
   // expose a destroy for next runs
-  api.destroy = function(){
-    try{ cancelAnimationFrame(api._raf); }catch(e){}
-    try{ window.removeEventListener('resize', onResize); }catch(e){}
-    try{ if (api.robotModel) scene.remove(api.robotModel); }catch(e){}
-    try{ renderer.dispose(); }catch(e){}
-    try{ const el = renderer.domElement; el && el.parentNode && el.parentNode.removeChild(el); }catch(e){}
+  const apiObj = {
+    ...api,
+    destroy: function(){
+      try{ cancelAnimationFrame(api._raf); }catch(e){}
+      try{ window.removeEventListener('resize', onResize); }catch(e){}
+      try{ if (api.robotModel) scene.remove(api.robotModel); }catch(e){}
+      try{ renderer.dispose(); }catch(e){}
+      try{ const el = renderer.domElement; el && el.parentNode && el.parentNode.removeChild(el); }catch(e){}
+    }
   };
-
-  window.__URDF_VIEWER__ = api;
+  window.__URDF_VIEWER__ = apiObj;
 })(); // end IIFE
 </script>
 </body>
