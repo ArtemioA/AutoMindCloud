@@ -25,3 +25,6 @@ Financial Accounting: https://colab.research.google.com/drive/1o4EPhvSMvY98NPEDp
 <img width="789" height="329" alt="image" src="https://github.com/user-attachments/assets/40b5ccec-29ec-4dea-a114-adc05fe85f5d" />
 
 **Robotics on Colab**
+
+<img width="644" height="333" alt="image" src="https://github.com/user-attachments/assets/91df6ef4-118e-4103-a16c-ac742c62d7a3" />
+
