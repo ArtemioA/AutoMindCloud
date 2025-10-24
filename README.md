@@ -24,6 +24,14 @@ Nuclear Physics: https://colab.research.google.com/drive/16XNpgvXsNqvK9qBESKXUa4
 
 <img width="593" height="279" alt="image" src="https://github.com/user-attachments/assets/41a46153-a2c8-4096-a6cf-b79309473594" />
 
+**White Board**
+
+<img width="933" height="481" alt="image" src="https://github.com/user-attachments/assets/eb9b46c6-038d-4acd-b46d-ad6ef2f725e8" />
+
+**IA Calculus Summary**
+
+<img width="690" height="437" alt="image" src="https://github.com/user-attachments/assets/f3f3c42c-cff9-4760-b545-5b7d4b64bf2f" />
+
 **Step Render on Colab**
 
 <img width="1306" height="436" alt="image" src="https://github.com/user-attachments/assets/56414870-9c4e-423d-aa7e-d9aeaa8e443f" />
