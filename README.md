@@ -22,7 +22,8 @@ Electromagnetism: https://colab.research.google.com/drive/1hJzAv6H5JG4P9kzMewav-
 
 Nuclear Physics: https://colab.research.google.com/drive/16XNpgvXsNqvK9qBESKXUa4QjcQBbJl2W?usp=sharing
 
-<img width="612" height="298" alt="image" src="https://github.com/user-attachments/assets/4bdf57fc-28c7-4c0a-9fd3-ee7faba0e961" />
+<img width="593" height="279" alt="image" src="https://github.com/user-attachments/assets/41a46153-a2c8-4096-a6cf-b79309473594" />
+
 
 
 **Robotics on Colab**
