@@ -27,6 +27,7 @@ Nuclear Physics: https://colab.research.google.com/drive/16XNpgvXsNqvK9qBESKXUa4
 
 **Robotics on Colab**
 
-<img width="1302" height="430" alt="image" src="https://github.com/user-attachments/assets/9fa73e0f-fc36-4760-964b-f45d27b34b89" />
+<img width="1301" height="431" alt="image" src="https://github.com/user-attachments/assets/303e6eb1-d722-43c8-a146-0b5986a453c2" />
+
 
 
