@@ -24,13 +24,19 @@ Heat Transfer by Conduction: https://colab.research.google.com/drive/1BukgVekSpa
 
 <img width="578" height="477" alt="image" src="https://github.com/user-attachments/assets/7d28cb70-0c31-48b4-ac1e-2e651963c006" />
 
+<br><br>
+
 Heat Transfer by Convection: https://colab.research.google.com/drive/1g95LonNxeMBTITWCpZgncDFi58bPi0lk?usp=sharing
 
 <img width="875" height="496" alt="image" src="https://github.com/user-attachments/assets/f9eba9e3-83c2-43a1-a401-02bb4bac8778" />
 
+<br><br>
+
 Electromagnetism: https://colab.research.google.com/drive/1hJzAv6H5JG4P9kzMewav-Ne3ZhjSPm31
 
 <img width="592" height="348" alt="image" src="https://github.com/user-attachments/assets/38ef2bf8-f549-484f-b7af-f692f245cde8" />
+
+<br><br>
 
 Nuclear Physics: https://colab.research.google.com/drive/16XNpgvXsNqvK9qBESKXUa4QjcQBbJl2W?usp=sharing
 
@@ -39,6 +45,8 @@ Nuclear Physics: https://colab.research.google.com/drive/16XNpgvXsNqvK9qBESKXUa4
 **White Board** (Thanks to my sister Mercedes Araya Day for the drawing)
 
 <img width="933" height="481" alt="image" src="https://github.com/user-attachments/assets/eb9b46c6-038d-4acd-b46d-ad6ef2f725e8" />
+
+<br><br>
 
 **IA Calculus Summary**
 
