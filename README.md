@@ -4,6 +4,8 @@
 
 <img width="180" height="100" alt="image" src="https://github.com/user-attachments/assets/18c36cdb-51f9-48f0-9458-52fa5ef2e844" />
 
+<br><br>
+
 Example of the Library Colab (Request Reading Permissions to Artemio Araya Day): https://colab.research.google.com/drive/1cwDrG9dbK1MfyaiI2gRaXxdlKRAjw_Wp?usp=sharing
 
 - Calculus Digitalization & Automation (Automatic Evaluatio complement to Sympy)
