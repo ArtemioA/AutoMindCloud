@@ -14,6 +14,7 @@ Example of the Library Colab (Request Reading Permissions to Artemio Araya Day):
 - Whiteboard on Colab
 - Step Render on Colab
 - Orthogonal Render on Colab
+- URDF Render on Colab
 
 **Examples**
 
